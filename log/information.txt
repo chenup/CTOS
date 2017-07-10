@@ -1,0 +1,314 @@
+FVP
+++++++++++++++++++++++++++++++++++++++++++++++++
+ATF
+++++++++++++++++++++++++++++++++++++++++++++++++
+@system counter
+
+#define SYS_COUNTER_FREQ_IN_TICKS	((1000 * 1000 * 1000) / 16)
+
+$set frequency with ((1000 * 1000 * 1000) / 16)
+/* 
+ * CNTFRQ_EL0, Counter-timer Frequency register 
+ * only be written in EL3
+ * Indicates the system counter clock frequency, in Hz.
+ */
+-> CNTFRQ_EL0 ((1000 * 1000 * 1000) / 16)
+------------------------------------------------
+bl31_main
+-bl31_arch_setup
+--write_cntfrq_el0
+------------------------------------------------
+
+@GIC V2
+
+[Secure]
+GICD_IGROUPRn
+[Common]
+GICD_TYPER | GICD_SGIR 				
+[Banked]
+GICD_CTLR | GICC_CTLR | GICC_BPR
+
+/* Base FVP compatible GIC memory map */
+#define BASE_GICD_BASE			0x2f000000
+#define BASE_GICR_BASE			0x2f100000
+#define BASE_GICC_BASE			0x2c000000
+
+#define ARM_IRQ_SEC_PHY_TIMER		29
+
+#define ARM_IRQ_SEC_SGI_0		8
+#define ARM_IRQ_SEC_SGI_1		9
+#define ARM_IRQ_SEC_SGI_2		10
+#define ARM_IRQ_SEC_SGI_3		11
+#define ARM_IRQ_SEC_SGI_4		12
+#define ARM_IRQ_SEC_SGI_5		13
+#define ARM_IRQ_SEC_SGI_6		14
+#define ARM_IRQ_SEC_SGI_7		15
+
+#define FVP_IRQ_TZ_WDOG			56
+#define FVP_IRQ_SEC_SYS_TIMER		57
+
+$initialize the ARM GIC driver
+/* In general, initialization just set some global variables. */
+-> g_gicc_base = 0x2c000000 
+-> g_gicd_base = 0x2f000000 
+/* for v2, don't need to set g_gicr_base */
+-> g_irq_sec_ptr = { {8,14}, {29,9,10,11,12,13,15,56,57} } 
+------------------------------------------------
+bl31_main
+-bl31_platform_setup
+--arm_bl31_platform_setup
+---plat_arm_gic_driver_init
+----arm_gic_init
+------------------------------------------------
+
+$setup the ARM GIC CPU interfaces
+/* for v3, need to run gicv3_cpuif_setup() */
+/* priority mask, 0~254(all) interrupts can be signals to the processor */
+write GICC_PMR with 0xff 
+-> GICC_PMR 0xff 
+/* 
+ * with GIC Security Extensions:
+ * Group 0 interrupts are Secure interrupts
+ * Group 1 interrupts are Non-secure interrupts
+ *
+ * Enable secure interrupts and use FIQs to route them. Disable legacy bypass.
+ * ENABLE_GRP0 | FIQ_EN | 
+ * FIQ_BYP_DIS_GRP0 | IRQ_BYP_DIS_GRP0 | FIQ_BYP_DIS_GRP1 | IRQ_BYP_DIS_GRP1
+ */
+write GICC_CTLR with 0b000111101001 (0x1e9) 
+-> GICC_CTLR 0x1e9
+------------------------------------------------
+arm_bl31_platform_setup
+-plat_arm_gic_init
+--arm_gic_setup
+---arm_gic_cpuif_setup
+------------------------------------------------
+
+#define GIC400_NUM_SPIS		480
+#define MAX_PPIS		14
+#define MAX_SGIS		16
+
+#define MIN_SGI_ID		0
+#define MIN_PPI_ID		16
+#define MIN_SPI_ID		32
+
+#define GIC_HIGHEST_SEC_PRIORITY 0
+#define GIC_LOWEST_SEC_PRIORITY	127
+#define GIC_HIGHEST_NS_PRIORITY	128
+#define GIC_LOWEST_NS_PRIORITY	254 /* 255 would disable an interrupt */
+
+$setup the ARM GIC distributor
+/* Disable the distributor */
+save the value of GICD_CTLR, clear ENABLE_GRP0 and ENABLE_GRP1 of GICD_CTLR
+-> GICD_CTLR & 0xfffffffc
+indicates the maximum number of interrup ts that the GIC supports, 1020(0~1019) ????
+-> (GICD_TYPER.ITLinesNumber + 1) * 32
+/* Mark out non-secure SPI interrupts */
+allocate all SPIs to Group 1
+-> GICD_IGROUPR<1-31> 0xffffffff
+set the priority of SPI interrupts with 0x80 (128)
+-> GICD_IPRIORITYR<1-254> 0x80808080 ????
+get the current CPU bit mask from GICD_ITARGETSR0 ????
+-> GICD_ITARGETSR0 & 0xff
+/* Configure SPI secure interrupts now */
+-> SPI 56 57
+-> allocate the SPI to Group 0
+-> set the priority of the SPI with 0 ????
+-> set GICD_ITARGETSR of the SPI with GICD_ITARGETSR0 & 0xff
+-> enable the SPI interrupt by setting the bit of GICD_ISENABLER with 1
+
+/*
+ * Configure the SGI and PPI. This is done in a separated function
+ * because each CPU is responsible for initializing its own private
+ * interrupts.
+ * Per cpu gic distributor setup which will be done by all cpus after a cold
+ * boot/hotplug. This marks out the secure interrupts & enables them.
+ */
+
+--arm_gic_pcpu_distif_setup ****
+setup SGI and PPI priorities
+-> GICD_IPRIORITYR<0> 0x80808080
+-> SGI/PPI 8,14,29,9,10,11,12,13,15
+-> set the priority of the SGI/PPI with 0 ????
+-> enable the SGI/PPI interrupt by setting the bit of GICD_ISENABLER with 1
+
+-> allocate these SGI/PPI to Group 0, other SGI/PPI to Group 1 by writting GICD_IGROUPR<0>
+------------------------------------------------
+/* enable the distributor, add forwarding interrupts of Group 0 */
+restore the value of GICD_CTLR, set ENABLE_GRP0 with 1
+-> GICD_CTLR | ENABLE_GRP0
+------------------------------------------------
+arm_gic_setup
+-arm_gic_distif_setup
+------------------------------------------------
+@The memory-mapped counter module
+
+/* Memory mapped Generic timer interfaces  */
+#define ARM_SYS_CNTCTL_BASE		0x2a430000
+#define ARM_SYS_CNTREAD_BASE	0x2a800000
+#define ARM_SYS_TIMCTL_BASE		0x2a810000
+
+/* Generic timer memory mapped registers & offsets */
+#define CNTCR_OFF			0x000
+#define CNTFID_OFF			0x020
+
+#define CNTCR_EN			(1 << 0)
+#define CNTCR_HDBG			(1 << 1)
+#define CNTCR_FCREQ(x)		((x) << 8)
+
+/* 
+ * CNTCR, Counter Control Register
+ * only writable by Secure accesses.
+ * When this register has an architecturally-defined reset value, 
+ * FCREQ reset to 0
+ */
+set CNTCR.En with 1 to enable system counter, CNTCR.FCREQ reset to 0
+-> CNTCR 0x1
+------------------------------------------------
+bl31_main
+-bl31_platform_setup
+--arm_bl31_platform_setup
+------------------------------------------------
+@The memory-mapped timer control module
+/*
+ * Definitions of register offsets and fields in the CNTCTLBase Frame of the
+ * system level implementation of the Generic Timer.
+ */
+#define CNTNSAR			0x4
+#define CNTNSAR_NS_SHIFT(x)	x
+
+#define CNTACR_BASE(x)		(0x40 + (x << 2))
+#define CNTACR_RPCT_SHIFT	0x0
+#define CNTACR_RVCT_SHIFT	0x1
+#define CNTACR_RFRQ_SHIFT	0x2
+#define CNTACR_RVOFF_SHIFT	0x3
+#define CNTACR_RWVT_SHIFT	0x4
+#define CNTACR_RWPT_SHIFT	0x5
+
+/* System timer related constants */
+#define PLAT_ARM_NSTIMER_FRAME_ID		1
+
+/* 
+ * CNTACR<n>, Counter-timer Access Control Registers, n = 0 - 7 
+ * CNTACR<n> provides the controls for frame CNTBaseN
+ */
+ CNTBase1 memory map:
+ read-only - CNTPCT
+ read-only - CNTVCT
+ read-only - CNTFRQ
+ read-only - CNTVOFF
+ read/write - EL1 physical registers (CNTP_CVAL CNTP_TVAL CNTP_CTL)
+ read/write - virtual timer registers (CNTV_CVAL CNTV_TVAL CNTV_CTL)
+ -> CNTACR<1> 0x3f (0b111111)
+/* 
+ * CNTNSAR, Counter-timer Non-secure Access Register
+ * CNTACR<n> is always accessible by Secure accesses.
+ * CNTNSAR.NS<n> determines whether CNTACR<n> is accessible by Non-secure accesses
+ */
+ -> CNTNSAR 0x2 (0b10)
+------------------------------------------------
+arm_bl31_platform_setup
+-arm_configure_sys_timer
+------------------------------------------------
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+TSP
+++++++++++++++++++++++++++++++++++++++++++++++++
+@GIC V2
+-> the same as ATF
+------------------------------------------------
+tsp_main
+-tsp_platform_setup
+--plat_arm_gic_driver_init
+--plat_arm_gic_init
+------------------------------------------------
+
+@Generic Timer
+/* initializes the generic timer to fire every 0.5 second */
+/* no memory-mapped*/
+/* The CNTPCT_EL0 register holds the current physical counter value */
+/*
+ * TimerConditionMet = (((Counter[63:0] – Offset[63:0])[63:0] - CompareValue[63:0]) >= 0)
+ * Reads TimerValue = (CompareValue – (Counter - Offset))[31:0] 
+ * Writes CompareValue = ((Counter - Offset)[63:0] + SignExtend(TimerValue))[63:0]
+ */
+write CNTPS_CVAL_EL1
+-> CNTPS_CVAL_EL1 = CNTPCT_EL0 + CNTFRQ_EL0 / 2
+/* Enable the secure physical timer, EL3 physical timer */
+/* Timer interrupt is not masked */
+write CNTPS_CTL_EL1
+-> CNTPS_CTL_EL1 0x1 
+------------------------------------------------
+tsp_main
+-tsp_generic_timer_start
+------------------------------------------------
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+TSP
+++++++++++++++++++++++++++++++++++++++++++++++++
+@GIC v2
+
+#define GIC_BASE		0x2c000000
+#define GICC_OFFSET		0x0
+#define GICD_OFFSET		0x3000000
+
+register physical memory (MEM_AREA_IO_SEC)
+transition physical address to virtual address
+-> gicc_base(virt)
+-> gicd_base(virt)
+------------------------------------------------
+generic_boot_init_primary
+-init_primary_helper
+--main_init_gic
+------------------------------------------------
+
+/* On ARMv8, GIC configuration is initialized in ARM-TF */
+initialize gic driver, set global variable gic_data
+-> gic_data
+
+struct gic_data {
+	vaddr_t gicc_base;
+	vaddr_t gicd_base;
+	size_t max_it;
+	struct itr_chip chip;
+};
+
+static const struct itr_ops gic_ops = {
+	.add = gic_op_add,
+	.enable = gic_op_enable,
+	.disable = gic_op_disable,
+	.raise_pi = gic_op_raise_pi,
+	.raise_sgi = gic_op_raise_sgi,
+	.set_affinity = gic_op_set_affinity,
+};
+------------------------------------------------
+main_init_gic
+-gic_init_base_addr
+------------------------------------------------
+save GICC_CTLR, clear GICC_CTLR with 0
+-> GICC_CTLR 0x0
+probe which interrupt number is the largest ????
+-> get max_it
+restore GICC_CTLR
+-> GICC_CTLR 0x1e9
+------------------------------------------------
+gic_init_base_addr
+-probe_max_it
+------------------------------------------------
+
+set global variable itr_chip
+-> itr_chip
+------------------------------------------------
+main_init_gic
+-itr_init
+------------------------------------------------
+
+set the CPU mask to deliver interrupts to any online core
+-> GICD_ITARGETSR 0xff
+------------------------------------------------
+gic_op_add
+-gic_it_set_cpu_mask
+------------------------------------------------
+
+
+

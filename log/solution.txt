@@ -1,0 +1,50 @@
+++++++++++++++++++++++++++++++++++++++++++++++++
+Generic Secure Timer
+++++++++++++++++++++++++++++++++++++++++++++++++
+\optee_os-master\core\arch\arm\kernel\generic_boot.c
+-> __weak void generic_s_timer_start(void){}
+-> generic_s_timer_start();
+
+\optee_os-master\core\arch\arm\plat-vexpress\main.c
+-> void generic_s_timer_start(void){}
+-> #ifdef IT_SECURE_TIMER {...} #endif
+
+\optee_os-master\core\arch\arm\include\kernel\generic_boot.h
+-> void generic_s_timer_start(void);
+
+\optee_os-master\core\arch\arm\include\arm64.h
+-> DEFINE_U64_REG_READ_FUNC(cntpct_el0)
+-> DEFINE_U64_REG_READ_FUNC(cntfrq_el0)
+-> DEFINE_U64_REG_READ_FUNC(cntps_ctl_el1)
+-> DEFINE_U64_REG_WRITE_FUNC(cntps_cval_el1)
+-> DEFINE_U64_REG_WRITE_FUNC(cntps_ctl_el1)
+
+\optee_os-master\core\arch\arm\plat-vexpress\platform_config.h
+-> #define IT_SECURE_TIMER 29
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+Static TA
+++++++++++++++++++++++++++++++++++++++++++++++++
+\optee_os-master\core\arch\arm\pta\
++ sta_filter.c
+~\sub.mk
+-> srcs-$(CFG_TEE_CORE_EMBED_INTERNAL_TESTS) += sta_filter.c
+
+\linux-optee\drivers\tee
++ tee_core_cp.c
++ tee_core_extern.h
++ tee_client_api.c
+~\Makefile
+-> tee-objs += tee_core_cp.o
+-> tee-objs += tee_client_api.o
+
+\linux-optee\drivers\tee\optee
++ tee_filter.c
+~\Makefile
+-> optee-objs += tee_filter.o
+
+\linux-optee\drivers\tee\optee\core.c
+-> 
+
+\linux-optee\include\linux\
++ tee_client_api.h
