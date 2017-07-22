@@ -28,7 +28,7 @@ Static TA
 \optee_os-master\core\arch\arm\pta\
 + sta_filter.c
 ~\sub.mk
--> srcs-$(CFG_TEE_CORE_EMBED_INTERNAL_TESTS) += sta_filter.c
+-> #srcs-$(CFG_TEE_CORE_EMBED_INTERNAL_TESTS) += sta_filter.c
 
 \linux-optee\drivers\tee
 + tee_core_cp.c
@@ -44,7 +44,28 @@ Static TA
 -> optee-objs += tee_filter.o
 
 \linux-optee\drivers\tee\optee\core.c
--> 
+-> //void tee_filter(struct tee_device *teedev);
+-> //tee_filter(optee->teedev);
 
 \linux-optee\include\linux\
 + tee_client_api.h
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+Dynamic TA
+++++++++++++++++++++++++++++++++++++++++++++++++
+\hello_world\ta\hello_world_ta.c
+-> static void test_cpu(void){}
+-> test_cpu();
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+Static TA : test_idle
+++++++++++++++++++++++++++++++++++++++++++++++++
+\optee_os\core\arch\arm\pta\
++ test_idle.c
+~\sub.mk
+-> srcs-$(CFG_TEE_CORE_EMBED_INTERNAL_TESTS) += test_idle.c
+\hello_world\ta\include\hello_world_ta.h
+-> #define STA_TEST_IDLE_UUID
+\hello_world\host\main.c
+-> TEEC_UUID uuid = STA_TEST_IDLE_UUID;
+-> res = TEEC_InvokeCommand(&sess, 163, &op, &err_origin);

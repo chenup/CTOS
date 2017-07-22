@@ -574,7 +574,7 @@ static const struct of_device_id optee_match[] = {
 
 static struct optee *optee_svc;
 
-void tee_filter(struct tee_device *teedev);
+//void tee_filter(struct tee_device *teedev);
 static int __init optee_driver_init(void)
 {
 	struct device_node *fw_np;
@@ -600,7 +600,7 @@ static int __init optee_driver_init(void)
 	optee_svc = optee;
 
 	// SNOWFLY
-	tee_filter(optee->teedev);
+	//tee_filter(optee->teedev);
 	return 0;
 }
 module_init(optee_driver_init);
