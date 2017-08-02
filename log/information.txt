@@ -310,5 +310,315 @@ gic_op_add
 -gic_it_set_cpu_mask
 ------------------------------------------------
 
+++++++++++++++++++++++++++++++++++++++++++++++++
+OPTEE boot
+++++++++++++++++++++++++++++++++++++++++++++++++
+vbar_el1: reset_vect_table
+sctlr_el1: SCTLR_I | SCTLR_A | SCTLR_SA
+copy init code and rodata into correct location
+------------------------------------------------
+__data_end -> __text_init_start ~ __rodata_init_end
+------------------------------------------------
+
+SP_EL0: stack_tmp + (cpu_id + 1) * stack_tmp_stride - stack_tmp_offset
+------------------------------------------------
+uint32_t stack_tmp[8][512 + 8]
+
++----------+
+|canary	   | 4 * 4
++----------+ <- SP_EL0
+|		   |
+|		   | 512 * 4
+|		   |
++----------+
+|canary    | 4 * 4
++----------+
+
+------------------------------------------------
+
+SP_EL1: &thread_core_local[cpu_id]
+------------------------------------------------
+struct thread_core_local thread_core_local[8]
+------------------------------------------------
+
+set sp with SP_EL0
+enable SError interrupt
+invalidate dcache
+------------------------------------------------
+__text_start ~ __end
+------------------------------------------------
+
+enable console
+init mmu_map
+------------------------------------------------
++--------+---------+
+| TZDRAM | TA_RAM  |
+|        +---------+
+|        | SDP RAM | (SDP test pool, optional)
++--------+---------+
+
+nsec_shared
+[
+	SHMEM: 0x8300 0000 (pa) | 0x20 0000 
+]
+
+secure_only
+[
+	TZDRAM: 0x0600 0000 (pa) | 0x0200 0000
+]
+
+static_memory_map
+{
+	map_tee_map
+	{
+		Name: TEE_RAM
+		Pa: 0x0600 0000 ( 96M )
+		Size: 1M
+		Type: MEM_AREA_TEE_RAM
+	}
+
+	map_ta_map
+	{
+		Name: TA_RAM
+		Pa: 0x0620 0000 ( 98M )
+		Size: 30M
+		Type: MEM_AREA_TA_RAM
+	}
+
+	map_nsec_shm
+	{
+		Name: SHRED_MEM
+		Pa: 0x8300 0000 ( 2096M )
+		Size: 2M
+		Type: MEM_AREA_NSEC_SHM
+	}
+
+	{
+		Name: CONSOLE_UART
+		Pa: 0x1c00 0000 ( 448M)
+		Size: 2M
+		Type: MEM_AREA_IO_SEC
+	}
+
+	{
+		Name: GICD
+		Pa: 0x2c00 0000 ( 704M )
+		Size： 2M
+		Type: MEM_AREA_IO_SEC
+	}
+
+	{
+		Name: GICC
+		Pa: 0x2f00 0000 ( 752M )
+		Size: 2M
+		Type: MEM_AREA_IO_SEC
+	}
+
+	{
+		Name: RES_MEM
+		Pa:  0x0000 0000
+		Size: 20M
+		Type: MEM_AREA_RES_VASPACE
+	}
+}
+
+------------------------------------------------
+
+init mmu_tables
+------------------------------------------------
+| L1 | L2 | L3 | page |
+| 2  | 9  | 9  | 12   |
+
+//Main MMU L1 table for teecore
+uint32_t main_mmu_l1_ttb[4096]
+
+
+------------------------------------------------
+
+init mmu_regs
+------------------------------------------------
+//Memory Attribute Indirection Register (EL1)
+write mair_el1 0xff04
+//Translation Control Register (EL1)
+write tcr_el1 (set 31 23 13 12 11 10 9 8 5 bit to 1) | tcr_ps_bits <<32
+/*
+TCR_EL1 has two TxSZ fields, corresponding to the two VA subranges:
+— TCR_EL1.T0SZ specifies the size for the lower VA range, translated using TTBR0_EL1.
+— TCR_EL1.T1SZ specifies the size for the upper VA range, translated using TTBR1_EL1
+*/
+write ttbr0_el1 V2P(l1_xlation_table[cpu_id])
+write ttbr1_el1 0
+------------------------------------------------
+
+enable mmu
+------------------------------------------------
+invalidate TLB
+//EL1 and EL0 stage 1 address translation enabled
+set sctlr_el1.M to 1
+------------------------------------------------
+
+enable icache
+------------------------------------------------
+set sctlr_el1.I to 1
+------------------------------------------------
+
+enable dcache
+------------------------------------------------
+set sctlr_el1.C to 1
+------------------------------------------------
+
+mask (A I F) exceptions
+------------------------------------------------
+A SError
+I IRQ
+F FIQ
+set daif.A|I|F to 1
+------------------------------------------------
+
+disable vfp
+------------------------------------------------
+//CPACR_EL1, Architectural Feature Access Control Register
+set cpacr_el1.FPEN to 0x00
+/* 
+ * Causes any instructions in EL0 or EL1 that use the registers associated with
+ * floating-point and Advanced SIMD execution to be trapped
+ */
+------------------------------------------------
+
+zero BSS area ( __bss_start ~ __bss_end )
+init boot thread
+------------------------------------------------
+link all threads.mutexes | tsd.sess_stack | tsd.pgt_cache
+set all cpus ' thread_core_local.curr_thread with -1 except local cpu
+set thread_core_local[l].curr_thread with 0
+set threads[0].state with THREAD_STATE_ACTIVE
+------------------------------------------------
+
+init asan ( address sanitizing )
+add pool ( __heap1_start ~ __heap1_end )
+init ta_ram
+init handlers
+------------------------------------------------
+std_smc
+fast_smc
+nintr
+cpu_on
+cpu_off
+cpu_suspend
+cpu_resume
+system_off
+system_reset
+------------------------------------------------
+
+init canary
+------------------------------------------------
+stack_tmp 
+stack_abt 
+stack_thread
++----------+
+|0xabababab| 1 * 4 
++----------+
+|          | 3 * 4
++----------+ 
+|		   |
+|		   | 
+|		   |
++----------+
+|		   | 3 * 4
++----------+
+|0xdededede| 1 * 4 
++----------+
+------------------------------------------------
+
+init thread stacks
+------------------------------------------------
+stack_thread[2][2048 + 8]
+
++----------+
+|canary	   | 4 * 4
++----------+ <- threads[thread_id].stack_va_end
+|		   |
+|		   | 2048 * 4
+|		   |
++----------+
+|canary    | 4 * 4
++----------+
+------------------------------------------------
+
+init pgt
+------------------------------------------------
+------------------------------------------------
+
+set tmp_stack
+------------------------------------------------
+stack_tmp[pos]
++----------+
+|canary	   | 4 * 4
++----------+ <- thread_core_local[pos].tmp_stack_va_end
+|		   |
+|		   | 512 * 4
+|		   |
++----------+
+|canary    | 4 * 4
++----------+
+------------------------------------------------
+
+set abt_stack
+------------------------------------------------
+stack_abt[pos]
++----------+
+|canary	   | 4 * 4
++----------+ <- thread_core_local[pos].tmp_stack_va_end
+|		   |
+|		   | 256 * 4
+|		   |
++----------+
+|canary    | 4 * 4
++----------+
+------------------------------------------------
+
+init vbar
+------------------------------------------------
+vbar_el1: thread_vect_table
+------------------------------------------------
+init fdt
+------------------------------------------------
+------------------------------------------------
+configure console from dt
+------------------------------------------------
+------------------------------------------------
+
+init gic
+------------------------------------------------
+mentioned above
+------------------------------------------------
+
+init support for future mapping of TAs
+------------------------------------------------
+------------------------------------------------
+
+init time source
+------------------------------------------------
+set _time_source
+------------------------------------------------
+
+call init_calls
+------------------------------------------------
+(*call)() in __initcall_start ~ __initcall_end
+------------------------------------------------
+
+flush dcache: __text_start ~ __end
+
+clear boot thread
+------------------------------------------------
+threads[ thread_core_local[pos].curr_thread ].state = THREAD_STATE_FREE
+thread_core_local[pos].curr_thread = -1
+------------------------------------------------
+smc #0
+
+
+
+
+
 
 
