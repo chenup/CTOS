@@ -116,9 +116,11 @@ void main_init_gic(void)
 //TODO
 void generic_s_timer_start()
 {
+	#ifdef ARM64
 	uint64_t cval;
 	uint32_t ctl = 0;
 
+	
 	/* The timer will fire every 0.5 second */
 	cval = read_cntpct_el0() + (read_cntfrq_el0() * 10);
 	write_cntps_cval_el1(cval);
@@ -127,6 +129,22 @@ void generic_s_timer_start()
 	//set_cntp_ctl_enable(ctl);
 	ctl |= 1 << 0; 
 	write_cntps_ctl_el1(ctl);
+
+	#elif defined ARM32
+	uint64_t cval;
+	uint32_t ctl = 0;
+
+	
+	/* The timer will fire every 0.5 second */
+	cval = read_cntpct() + (read_cntfrq() * 10);
+	write_cntp_cval(cval);
+
+	/* Enable the secure physical timer */
+	//set_cntp_ctl_enable(ctl);
+	ctl |= 1 << 0; 
+	write_cntp_ctl(ctl);
+
+	#endif
 }
 
 static void main_fiq(void)
@@ -174,6 +192,7 @@ driver_init(init_console_itr);
 #ifdef IT_SECURE_TIMER
 static enum itr_return timer_itr_cb(struct itr_handler *h __unused)
 {
+	#ifdef ARM64
 	//static uint32_t count = 0;
 	/* Ensure that the timer did assert the interrupt */
 	assert(read_cntps_ctl_el1() >> 2 & 1);
@@ -184,9 +203,26 @@ static enum itr_return timer_itr_cb(struct itr_handler *h __unused)
 	 */
 	isb();
 	write_cntps_ctl_el1(0);
+
 	generic_s_timer_start();
 	isb();
 	DMSG("###DEBUG###: cpu %" PRIu32, (uint32_t)get_core_pos());
+	#elif defined ARM32
+	//static uint32_t count = 0;
+	/* Ensure that the timer did assert the interrupt */
+	assert(read_cntp_ctl() >> 2 & 1);
+
+	/*
+	 * Disable the timer and reprogram it. The barriers ensure that there is
+	 * no reordering of instructions around the reprogramming code.
+	 */
+	isb();
+	write_cntp_ctl(0);
+
+	generic_s_timer_start();
+	isb();
+	DMSG("###DEBUG###: cpu %" PRIu32, (uint32_t)get_core_pos());
+	#endif
 	return ITRR_HANDLED;
 }
 

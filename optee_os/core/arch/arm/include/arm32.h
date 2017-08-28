@@ -579,6 +579,27 @@ static inline void write_cntfrq(uint32_t frq)
 	asm volatile("mcr p15, 0, %0, c14, c0, 0" : : "r" (frq));
 }
 
+static inline void write_cntp_cval(uint64_t cval)
+{
+	asm volatile ("mcrr	p15, 2, %Q[cval], %R[cval], c14"
+			: : [cval] "r" (cval)
+	);
+}
+
+static inline void write_cntp_ctl(uint32_t ctl)
+{
+	asm volatile("mcr p15, 0, %0, c14, c2, 1" : : "r" (ctl));
+}
+
+static inline uint32_t read_cntp_ctl(void)
+{
+	uint32_t ctl;
+
+	asm volatile("mrc p15, 0, %0, c14, c2, 1" : "=r" (ctl));
+	return ctl;
+}
+
+
 static __always_inline uint32_t read_pc(void)
 {
 	uint32_t val;

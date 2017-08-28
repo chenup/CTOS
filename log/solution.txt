@@ -1,5 +1,5 @@
 ++++++++++++++++++++++++++++++++++++++++++++++++
-Generic Secure Timer
+Generic Secure Timer aarch64
 ++++++++++++++++++++++++++++++++++++++++++++++++
 \optee_os-master\core\arch\arm\kernel\generic_boot.c
 -> __weak void generic_s_timer_start(void){}
@@ -21,6 +21,14 @@ Generic Secure Timer
 
 \optee_os-master\core\arch\arm\plat-vexpress\platform_config.h
 -> #define IT_SECURE_TIMER 29
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+Generic Secure Timer aarch32
+++++++++++++++++++++++++++++++++++++++++++++++++
+\optee_os-master\core\arch\arm\include\arm32.h
+-> static inline void write_cntp_cval(uint64_t cval)
+-> static inline void write_cntfrq(uint32_t frq)
+-> static inline uint32_t read_cntp_ctl(void)
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 Static TA
