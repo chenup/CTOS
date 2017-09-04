@@ -77,3 +77,10 @@ Static TA : test_idle
 \hello_world\host\main.c
 -> TEEC_UUID uuid = STA_TEST_IDLE_UUID;
 -> res = TEEC_InvokeCommand(&sess, 163, &op, &err_origin);
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee_os aarch32
+++++++++++++++++++++++++++++++++++++++++++++++++
+\build\Makefile
+-> COMPILE_S_USER  ?= 32
+-> COMPILE_S_KERNEL ?= 32

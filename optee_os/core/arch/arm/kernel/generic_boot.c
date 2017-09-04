@@ -680,6 +680,7 @@ static void init_primary_helper(unsigned long pageable_part,
 	IMSG("OP-TEE version: %s", core_v_str);
 
 	main_init_gic();
+	//TODO
 	generic_s_timer_start();
 	init_vfp_nsec();
 	if (init_teecore() != TEE_SUCCESS)
