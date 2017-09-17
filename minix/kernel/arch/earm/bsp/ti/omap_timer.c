@@ -371,18 +371,17 @@ frc_overflow_check(u32_t cur_frc)
 void
 bsp_timer_int_handler(void)
 {
-	/* Clear all interrupts */
-	u32_t tisr, now;
+	/* Ensure that the timer did assert the interrupt */
+	assert(read_cntps_ctl_el1() >> 2 & 1);
+	/*
+	 * Disable the timer and reprogram it. The barriers ensure that there is
+	 * no reordering of instructions around the reprogramming code.
+	 */
+	isb();
+	write_cntps_ctl_el1(0);
 
-	/* when the kernel itself is running interrupts are disabled. We
-	 * should therefore also read the overflow counter to detect this as
-	 * to not miss events. */
-	tisr = OMAP3_TISR_MAT_IT_FLAG | OMAP3_TISR_OVF_IT_FLAG |
-	    OMAP3_TISR_TCAR_IT_FLAG;
-	mmio_write(timer->base + timer->regs->TISR, tisr);
-
-	now = read_frc();
-	frc_overflow_check(now);
+	generic_s_timer_start();
+	isb();
 }
 
 /* Use the free running clock as TSC */
