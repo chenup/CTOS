@@ -7,6 +7,8 @@ srcs-$(CFG_PS2MOUSE) += ps2mouse.c
 srcs-$(CFG_PL111) += pl111.c
 srcs-$(CFG_FRAME_BUFFER) += frame_buffer.c
 srcs-$(CFG_GIC) += gic.c
+#TODO
+srcs-$(CFG_GIC) += rtos_bsp_intr.c
 srcs-$(CFG_PL061) += pl061_gpio.c
 srcs-$(CFG_PL022) += pl022_spi.c
 srcs-$(CFG_SUNXI_UART) += sunxi_uart.c

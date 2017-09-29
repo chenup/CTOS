@@ -56,4 +56,10 @@ void gic_cpu_init(struct gic_data *gd);
 void gic_it_handle(struct gic_data *gd);
 
 void gic_dump_state(struct gic_data *gd);
+//TODO
+void gic_it_enable(struct gic_data *gd, size_t it);
+//TODO
+void gic_it_enable(struct gic_data *gd, size_t it);
+//TODO
+void gic_it_add(struct gic_data *gd, size_t it);
 #endif /*__DRIVERS_GIC_H*/

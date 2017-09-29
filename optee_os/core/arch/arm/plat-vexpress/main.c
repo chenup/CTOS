@@ -49,7 +49,8 @@
 #include <console.h>
 #include <keep.h>
 #include <initcall.h>
-
+#include <kernel/rtos_type.h>
+#include <kernel/rtos_interrupt.h>
 static void main_fiq(void);
 
 static const struct thread_handlers handlers = {
@@ -72,8 +73,8 @@ static const struct thread_handlers handlers = {
 	.system_reset = pm_panic,
 #endif
 };
-
-static struct gic_data gic_data;
+//TODO
+struct gic_data gic_data;
 static struct pl011_data console_data;
 
 register_phys_mem(MEM_AREA_IO_SEC, CONSOLE_UART_BASE, PL011_REG_SIZE);
@@ -189,7 +190,82 @@ driver_init(init_console_itr);
 #endif
 
 //TODO
+#ifdef OLD_IT_CONSOLE_UART
+static int console_itr_handler(irq_hook_t *hook __unused)
+{
+	struct serial_chip *cons = &console_data.chip;
+
+	while (cons->ops->have_rx_data(cons)) {
+		int ch __maybe_unused = cons->ops->getchar(cons);
+
+		DMSG("cpu %zu: got 0x%x", get_core_pos(), ch);
+	}
+	return(1);
+}
+/*
+static struct itr_handler console_itr = {
+	.it = IT_CONSOLE_UART,
+	.flags = ITRF_TRIGGER_LEVEL,
+	.handler = console_itr_cb,
+};
+KEEP_PAGER(console_itr);
+*/
+static irq_hook_t console_itr_hook;
+
+static TEE_Result init_console_itr(void)
+{
+	gic_it_add(&gic_data, IT_CONSOLE_UART);
+	put_irq_handler(&console_itr_hook, IT_CONSOLE_UART, console_itr_handler);
+	return TEE_SUCCESS;
+}
+driver_init(init_console_itr);
+#endif
+
+//TODO
 #ifdef IT_SECURE_TIMER
+static int secure_timer_handler(irq_hook_t *hook __unused)
+{
+	/* Ensure that the timer did assert the interrupt */
+	assert(read_cntps_ctl_el1() >> 2 & 1);
+	/*
+	 * Disable the timer and reprogram it. The barriers ensure that there is
+	 * no reordering of instructions around the reprogramming code.
+	 */
+	isb();
+	write_cntps_ctl_el1(0);
+
+	generic_s_timer_start();
+	isb();
+	DMSG("###DEBUG###: cpu %" PRIu32, (uint32_t)get_core_pos());
+  	return(1);                                  
+}
+/*
+static struct itr_handler timer_itr = {
+	.it = IT_SECURE_TIMER,
+	.flags = ITRF_TRIGGER_LEVEL,
+	.handler = timer_itr_cb,
+};
+KEEP_PAGER(timer_itr);
+*/
+static irq_hook_t secure_timer_hook;
+
+static TEE_Result init_secure_timer(void)
+{
+	/*
+	itr_add(&timer_itr);
+	itr_enable(IT_SECURE_TIMER);
+	*/
+	gic_it_add(&gic_data, IT_SECURE_TIMER);
+	put_irq_handler(&secure_timer_hook, IT_SECURE_TIMER, secure_timer_handler);
+	//enable_irq(&secure_timer_hook);
+	return TEE_SUCCESS;
+}
+driver_init(init_secure_timer);
+#endif
+
+//TODO
+//#ifdef IT_SECURE_TIMER
+#ifdef OLD_IT_SECURE_TIMER 
 static enum itr_return timer_itr_cb(struct itr_handler *h __unused)
 {
 	#ifdef ARM64
@@ -241,6 +317,7 @@ static TEE_Result init_secure_timer(void)
 }
 driver_init(init_secure_timer);
 #endif
+
 
 #ifdef CFG_TZC400
 register_phys_mem(MEM_AREA_IO_SEC, TZC400_BASE, TZC400_REG_SIZE);

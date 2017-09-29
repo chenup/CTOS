@@ -101,6 +101,12 @@ __weak void main_init_gic(void)
 }
 
 //TODO
+static void intr_init(void)
+{
+	main_init_gic();
+}
+
+//TODO
 __weak void generic_s_timer_start(void)
 {
 
@@ -679,7 +685,9 @@ static void init_primary_helper(unsigned long pageable_part,
 
 	IMSG("OP-TEE version: %s", core_v_str);
 
-	main_init_gic();
+	//main_init_gic();
+	//TODO
+	intr_init();
 	//TODO
 	generic_s_timer_start();
 	init_vfp_nsec();

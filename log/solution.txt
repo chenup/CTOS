@@ -84,3 +84,39 @@ optee_os aarch32
 \build\Makefile
 -> COMPILE_S_USER  ?= 32
 -> COMPILE_S_KERNEL ?= 32
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+expand optee with minix
+++++++++++++++++++++++++++++++++++++++++++++++++
+\optee_os\core\include\drivers\
++ rtos_bsp_intr.h
+\optee_os\core\drivers\
++ rtos_bsp_intr.c
+\optee_os\core\drivers\gic.c
+-> void gic_it_enable (remove static)
+-> void gic_it_disable (remove static)
+-> void gic_it_add (remove static)
+-> irq_handle(id);
+\optee_os\core\include\drivers\gic.h
+-> void gic_it_enable(struct gic_data *gd, size_t it);
+-> void gic_it_disable(struct gic_data *gd, size_t it);
+-> void gic_it_add(struct gic_data *gd, size_t it);
+\optee_os\core\arch\arm\kernel\generic_boot.c
+-> intr_init();
+-> static void intr_init(void){}
+\optee_os\core\include\kernel\
++ rtos_type.h
++ rtos_interrupt.h
++ rtos_glo.h
+\optee_os\core\kernel\
++ rtos_interrupt.c
+\optee_os\core\drivers\sub.mk
+-> srcs-$(CFG_GIC) += rtos_bsp_intr.c
+\optee_os\core\kernel\sub.mk
+-> srcs-y += rtos_interrupt.c
+\optee_os\core\arch\arm\plat-vexpress\main.c
+-> struct gic_data gic_data; (remove static)
+-> #ifdef IT_SECURE_TIMER {} #endif
+-> #ifdef OLD_IT_SECURE_TIMER {} #endif
+-> #ifdef IT_CONSOLE_UART {} #endif
+-> #ifdef OLD_IT_CONSOLE_UART {} #endif

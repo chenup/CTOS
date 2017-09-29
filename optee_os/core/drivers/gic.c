@@ -34,7 +34,7 @@
 #include <util.h>
 #include <io.h>
 #include <trace.h>
-
+#include <kernel/rtos_interrupt.h>
 /* Offsets from gic.gicc_base */
 #define GICC_CTLR		(0x000)
 #define GICC_PMR		(0x004)
@@ -232,7 +232,8 @@ void gic_init_base_addr(struct gic_data *gd, vaddr_t gicc_base __maybe_unused,
 	gd->chip.ops = &gic_ops;
 }
 
-static void gic_it_add(struct gic_data *gd, size_t it)
+//static void gic_it_add(struct gic_data *gd, size_t it)
+void gic_it_add(struct gic_data *gd, size_t it)
 {
 	size_t idx = it / NUM_INTS_PER_REG;
 	uint32_t mask = 1 << (it % NUM_INTS_PER_REG);
@@ -284,7 +285,9 @@ static void gic_it_set_prio(struct gic_data *gd, size_t it, uint8_t prio)
 	write8(prio, gd->gicd_base + GICD_IPRIORITYR(0) + it);
 }
 
-static void gic_it_enable(struct gic_data *gd, size_t it)
+//TODO
+//static void gic_it_enable(struct gic_data *gd, size_t it)
+void gic_it_enable(struct gic_data *gd, size_t it)
 {
 	size_t idx = it / NUM_INTS_PER_REG;
 	uint32_t mask = 1 << (it % NUM_INTS_PER_REG);
@@ -303,7 +306,9 @@ static void gic_it_enable(struct gic_data *gd, size_t it)
 	write32(mask, gd->gicd_base + GICD_ISENABLER(idx));
 }
 
-static void gic_it_disable(struct gic_data *gd, size_t it)
+//TODO
+//static void gic_it_disable(struct gic_data *gd, size_t it)
+void gic_it_disable(struct gic_data *gd, size_t it)
 {
 	size_t idx = it / NUM_INTS_PER_REG;
 	uint32_t mask = 1 << (it % NUM_INTS_PER_REG);
@@ -421,7 +426,10 @@ void gic_it_handle(struct gic_data *gd)
 	{
 		
 		//DMSG("###DEBUG###: interrupt %" PRIu32, id);
-		itr_handle(id);
+		//itr_handle(id);
+		//TODO
+		DMSG("###DEBUG###: this is a interrupt");
+		irq_handle(id);
 	}
 	else
 		DMSG("ignoring interrupt %" PRIu32, id);
