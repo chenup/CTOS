@@ -120,3 +120,25 @@ expand optee with minix
 -> #ifdef OLD_IT_SECURE_TIMER {} #endif
 -> #ifdef IT_CONSOLE_UART {} #endif
 -> #ifdef OLD_IT_CONSOLE_UART {} #endif
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee monotonic time
+++++++++++++++++++++++++++++++++++++++++++++++++
+\optee_os\core\include\
++ rtos_jiffies.h
++ rtos_time.h
++ rtos_timer.h
++ rtos_list.h
+\optee_os\core\kernel\
++ rtos_time.c
++ rtos_timer.c
+\optee_os\core\kernel\sub.mk
+-> srcs-y += rtos_time.c
+-> srcs-y += rtos_timer.c
+\optee_os\core\arch\arm\plat-vexpress\main.c
+-> #ifdef IT_SECURE_TIMER {...} #endif
+-> static void restart_s_timer(void);
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee process
+++++++++++++++++++++++++++++++++++++++++++++++++

@@ -51,7 +51,12 @@
 #include <initcall.h>
 #include <kernel/rtos_type.h>
 #include <kernel/rtos_interrupt.h>
+#include <rtos_jiffies.h>
+#include <rtos_time.h>
+
 static void main_fiq(void);
+//TODO
+static void restart_s_timer(void);
 
 static const struct thread_handlers handlers = {
 	.std_smc = tee_entry_std,
@@ -225,6 +230,14 @@ driver_init(init_console_itr);
 #ifdef IT_SECURE_TIMER
 static int secure_timer_handler(irq_hook_t *hook __unused)
 {
+	restart_s_timer();
+	timer_trick();
+  	return(1);                                  
+}
+
+//TODO
+static void restart_s_timer()
+{
 	/* Ensure that the timer did assert the interrupt */
 	assert(read_cntps_ctl_el1() >> 2 & 1);
 	/*
@@ -237,8 +250,10 @@ static int secure_timer_handler(irq_hook_t *hook __unused)
 	generic_s_timer_start();
 	isb();
 	DMSG("###DEBUG###: cpu %" PRIu32, (uint32_t)get_core_pos());
-  	return(1);                                  
 }
+
+
+
 /*
 static struct itr_handler timer_itr = {
 	.it = IT_SECURE_TIMER,
@@ -248,6 +263,8 @@ static struct itr_handler timer_itr = {
 KEEP_PAGER(timer_itr);
 */
 static irq_hook_t secure_timer_hook;
+
+KEEP_PAGER(secure_timer_hook);
 
 static TEE_Result init_secure_timer(void)
 {
