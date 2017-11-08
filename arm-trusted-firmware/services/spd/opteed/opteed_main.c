@@ -271,7 +271,10 @@ int32_t opteed_setup(void)
 	opteed_init_optee_ep_state(ep_info, opteed_rw, init_load_addr,
 				   paged_part, mem_limit,
 				   &opteed_sp_context[linear_id]);
-
+	//TODO
+	ep_info->args.arg3 = init_size; 
+	memcpy((void*)0x6100000ul, (void*)(0x6000000ul+init_size-0x226c4), 0x226c4u);
+	//TODO_END
 	/*
 	 * All OPTEED initialization done. Now register our init function with
 	 * BL31 for deferred invocation

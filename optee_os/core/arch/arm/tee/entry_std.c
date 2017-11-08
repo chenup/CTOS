@@ -215,6 +215,23 @@ static TEE_Result get_open_session_meta(size_t num_params,
 	return TEE_SUCCESS;
 }
 
+//TODO
+static void sn_entry_open_session(struct thread_smc_args *smc_args)
+{
+	TEE_Result res;
+	TEE_ErrorOrigin err_orig = TEE_ORIGIN_TEE;
+	struct tee_ta_session *s = NULL;
+	TEE_Identity clnt_id;
+	TEE_UUID uuid;
+	struct tee_ta_param param;
+
+	res = sn_tee_ta_open_session(&err_orig, &s, &tee_open_sessions, &uuid,
+				  &clnt_id, TEE_TIMEOUT_INFINITE, &param);
+	if (res != TEE_SUCCESS)
+		s = NULL;
+	smc_args->a0 = OPTEE_SMC_RETURN_OK;
+}
+
 static void entry_open_session(struct thread_smc_args *smc_args,
 			       struct optee_msg_arg *arg, uint32_t num_params)
 {
@@ -355,6 +372,14 @@ static struct mobj *get_cmd_buffer(paddr_t parg, uint32_t *num_params)
 	args_size = OPTEE_MSG_GET_ARG_SIZE(*num_params);
 
 	return mobj_shm_alloc(parg, args_size);
+}
+
+//TODO
+void sn_tee_entry_std(struct thread_smc_args *smc_args)
+{
+	/* Enable foreign interrupts for STD calls */
+	thread_set_foreign_intr(true);
+	sn_entry_open_session(smc_args);
 }
 
 /*

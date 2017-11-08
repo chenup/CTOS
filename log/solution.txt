@@ -142,3 +142,38 @@ optee monotonic time
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee process
 ++++++++++++++++++++++++++++++++++++++++++++++++
+\hello_world\ta\hello_world_ta.c
+-> TA_OpenSessionEntryPoint()
+\optee_os\
++ process.ta ( \hello_world\ta\*.ta )
+\optee_os\out\arm\core\
+- tee.bin
+\optee_os\scripts\gen_hashed_bin.py
+-> append_to(outf, 0, './process.ta')
+\arm-trusted-firmware\services\spd\opteed\opteed_main.c
+-> opteed_setup()
+\optee_os\core\kernel\tee_ta_manager.c
+-> sn_tee_ta_init_session()
+-> sn_tee_ta_open_session()
+\optee_os\core\include\kernel\tee_ta_manager.h
+-> sn_tee_ta_open_session()
+\optee_os\core\arch\arm\tee\entry_std.c
+-> sn_entry_open_session()
+-> sn_tee_entry_std()
+\optee_os\core\arch\arm\include\tee\entry_std.h
+-> sn_tee_entry_std()
+\optee_os\core\arch\arm\kernel\thread.c
+-> unsigned int sn_optee_size = -1;
+-> void sn_thread_std_smc_entry(void);
+-> sn_thread_alloc_and_run()
+-> __sn_thread_std_smc_entry()
+-> thread_clr_boot_thread()
+\optee_os\core\arch\arm\kernel\thread_private.h
+-> void __sn_thread_std_smc_entry(struct thread_smc_args *args);
+\optee_os\core\arch\arm\kernel\thread_a64.S
+-> FUNC sn_thread_std_smc_entry {...} END_FUNC sn_thread_std_smc_entry
+
+
+
+
+

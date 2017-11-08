@@ -435,6 +435,50 @@ TEE_Result tee_ta_close_session(struct tee_ta_session *csess,
 	return TEE_SUCCESS;
 }
 
+//TODO
+static TEE_Result sn_tee_ta_init_session(TEE_ErrorOrigin *err,
+				struct tee_ta_session_head *open_sessions,
+				const TEE_UUID *uuid,
+				struct tee_ta_session **sess)
+{
+	TEE_Result res;
+	struct tee_ta_session *s = calloc(1, sizeof(struct tee_ta_session));
+
+	*err = TEE_ORIGIN_TEE;
+	if (!s)
+		return TEE_ERROR_OUT_OF_MEMORY;
+
+	s->cancel_mask = true;
+	condvar_init(&s->refc_cv);
+	condvar_init(&s->lock_cv);
+	s->lock_thread = THREAD_ID_INVALID;
+	s->ref_count = 1;
+
+
+	/*
+	 * We take the global TA mutex here and hold it while doing
+	 * RPC to load the TA. This big critical section should be broken
+	 * down into smaller pieces.
+	 */
+
+
+	mutex_lock(&tee_ta_mutex);
+	TAILQ_INSERT_TAIL(open_sessions, s, link);
+
+	//TODO
+	/* Look for user TA */
+	res = sn_tee_ta_init_user_ta_session(uuid, s);
+
+	if (res == TEE_SUCCESS) {
+		*sess = s;
+	} else {
+		TAILQ_REMOVE(open_sessions, s, link);
+		free(s);
+	}
+	mutex_unlock(&tee_ta_mutex);
+	return res;
+}
+
 static TEE_Result tee_ta_init_session_with_context(struct tee_ta_ctx *ctx,
 			struct tee_ta_session *s)
 {
@@ -520,6 +564,75 @@ out:
 		free(s);
 	}
 	mutex_unlock(&tee_ta_mutex);
+	return res;
+}
+
+//TODO
+TEE_Result sn_tee_ta_open_session(TEE_ErrorOrigin *err,
+			       struct tee_ta_session **sess,
+			       struct tee_ta_session_head *open_sessions,
+			       const TEE_UUID *uuid,
+			       const TEE_Identity *clnt_id,
+			       uint32_t cancel_req_to,
+			       struct tee_ta_param *param)
+{
+	TEE_Result res;
+	struct tee_ta_session *s = NULL;
+	struct tee_ta_ctx *ctx;
+	bool panicked;
+	bool was_busy = false;
+
+	//TODO
+	res = sn_tee_ta_init_session(err, open_sessions, uuid, &s);
+	if (res != TEE_SUCCESS) {
+		DMSG("init session failed 0x%x", res);
+		return res;
+	}
+
+	if (!check_params(s, param))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	ctx = s->ctx;
+
+	if (ctx->panicked) {
+		DMSG("panicked, call tee_ta_close_session()");
+		tee_ta_close_session(s, open_sessions, KERN_IDENTITY);
+		*err = TEE_ORIGIN_TEE;
+		return TEE_ERROR_TARGET_DEAD;
+	}
+
+	*sess = s;
+	/* Save identity of the owner of the session */
+	s->clnt_id = *clnt_id;
+
+	if (tee_ta_try_set_busy(ctx)) {
+		set_invoke_timeout(s, cancel_req_to);
+		res = ctx->ops->enter_open_session(s, param, err);
+		tee_ta_clear_busy(ctx);
+	} else {
+		/* Deadlock avoided */
+		res = TEE_ERROR_BUSY;
+		was_busy = true;
+	}
+
+	panicked = ctx->panicked;
+
+	tee_ta_put_session(s);
+	if (panicked || (res != TEE_SUCCESS))
+		tee_ta_close_session(s, open_sessions, KERN_IDENTITY);
+
+	/*
+	 * Origin error equal to TEE_ORIGIN_TRUSTED_APP for "regular" error,
+	 * apart from panicking.
+	 */
+	if (panicked || was_busy)
+		*err = TEE_ORIGIN_TEE;
+	else
+		*err = TEE_ORIGIN_TRUSTED_APP;
+
+	if (res != TEE_SUCCESS)
+		EMSG("Failed. Return error 0x%x", res);
+
 	return res;
 }
 

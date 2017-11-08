@@ -34,5 +34,6 @@
 
 /* Standard call entry */
 void tee_entry_std(struct thread_smc_args *args);
-
+//TODO
+void sn_tee_entry_std(struct thread_smc_args *args);
 #endif /* TEE_ENTRY_STD_H */

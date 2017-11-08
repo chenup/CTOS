@@ -57,7 +57,6 @@ void TA_DestroyEntryPoint(void)
  * TA. In this function you will normally do the global initialization for the
  * TA.
  */
-//TODO
 TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
 		TEE_Param __maybe_unused params[4],
 		void __maybe_unused **sess_ctx)
@@ -66,12 +65,8 @@ TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
 						   TEE_PARAM_TYPE_NONE,
 						   TEE_PARAM_TYPE_NONE,
 						   TEE_PARAM_TYPE_NONE);
-	unsigned num = 0;
 	if (param_types != exp_param_types)
-		param_types = 0;
-	else
-		param_types = 1;
-		//return TEE_ERROR_BAD_PARAMETERS;
+		return TEE_ERROR_BAD_PARAMETERS;
 
 	/* Unused parameters */
 	(void)&params;
@@ -81,11 +76,7 @@ TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
 	 * The DMSG() macro is non-standard, TEE Internal API doesn't
 	 * specify any means to logging from a TA.
 	 */
-	while(param_types != 2) {
-		if(num % (16*1024*1024) == 0)
-		DMSG("Hello World         %d\n", num/(16*1024*1024));
-		num += 1;
-	}
+	DMSG("Hello World!\n");
 
 	/* If return value != TEE_SUCCESS the session will not be created. */
 	return TEE_SUCCESS;
@@ -101,6 +92,7 @@ void TA_CloseSessionEntryPoint(void __maybe_unused *sess_ctx)
 	DMSG("Goodbye!\n");
 }
 
+/*
 static TEE_Result inc_value(uint32_t param_types,
 	TEE_Param params[4])
 {
@@ -118,7 +110,15 @@ static TEE_Result inc_value(uint32_t param_types,
 	DMSG("Increase value to: %u", params[0].value.a);
 	return TEE_SUCCESS;
 }
-
+*/
+//TODO
+static void test_cpu(void)
+{
+	while(true)
+	{
+		DMSG("...");
+	}
+}
 /*
  * Called when a TA is invoked. sess_ctx hold that value that was
  * assigned by TA_OpenSessionEntryPoint(). The rest of the paramters
@@ -126,13 +126,15 @@ static TEE_Result inc_value(uint32_t param_types,
  */
 TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 			uint32_t cmd_id,
-			uint32_t param_types, TEE_Param params[4])
+			uint32_t __maybe_unused param_types, TEE_Param __maybe_unused params[4])
 {
 	(void)&sess_ctx; /* Unused parameter */
 
 	switch (cmd_id) {
 	case TA_HELLO_WORLD_CMD_INC_VALUE:
-		return inc_value(param_types, params);
+		//TODO	
+		test_cpu();
+		//return inc_value(param_types, params);
 #if 0
 	case TA_HELLO_WORLD_CMD_XXX:
 		return ...

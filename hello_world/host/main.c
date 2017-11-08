@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 	TEEC_Session sess;
 	TEEC_Operation op;
 	//TODO
-	TEEC_UUID uuid = STA_TEST_IDLE_UUID;
+	TEEC_UUID uuid = TA_HELLO_WORLD_UUID;
 	uint32_t err_origin;
 
 	/* Initialize a context connecting us to the TEE */
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 	 */
 	printf("Invoking TA to increment %d\n", op.params[0].value.a);
 	//TODO
-	res = TEEC_InvokeCommand(&sess, 163, &op,
+	res = TEEC_InvokeCommand(&sess, TA_HELLO_WORLD_CMD_INC_VALUE, &op,
 				 &err_origin);
 	if (res != TEEC_SUCCESS)
 		errx(1, "TEEC_InvokeCommand failed with code 0x%x origin 0x%x",

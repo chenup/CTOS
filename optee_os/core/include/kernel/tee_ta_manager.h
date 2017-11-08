@@ -140,6 +140,14 @@ TEE_Result tee_ta_open_session(TEE_ErrorOrigin *err,
 			       const TEE_Identity *clnt_id,
 			       uint32_t cancel_req_to,
 			       struct tee_ta_param *param);
+//TODO
+TEE_Result sn_tee_ta_open_session(TEE_ErrorOrigin *err,
+			       struct tee_ta_session **sess,
+			       struct tee_ta_session_head *open_sessions,
+			       const TEE_UUID *uuid,
+			       const TEE_Identity *clnt_id,
+			       uint32_t cancel_req_to,
+			       struct tee_ta_param *param);
 
 TEE_Result tee_ta_invoke_command(TEE_ErrorOrigin *err,
 				 struct tee_ta_session *sess,

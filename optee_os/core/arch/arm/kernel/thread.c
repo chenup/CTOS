@@ -146,6 +146,8 @@ thread_pm_handler_t thread_cpu_resume_handler_ptr;
 thread_pm_handler_t thread_system_off_handler_ptr;
 thread_pm_handler_t thread_system_reset_handler_ptr;
 
+//TODO
+unsigned int sn_optee_size = -1;
 
 static unsigned int thread_global_lock = SPINLOCK_UNLOCK;
 static bool thread_prealloc_rpc_cache;
@@ -423,6 +425,79 @@ void thread_clr_boot_thread(void)
 	assert(TAILQ_EMPTY(&threads[l->curr_thread].mutexes));
 	threads[l->curr_thread].state = THREAD_STATE_FREE;
 	l->curr_thread = -1;
+	//TODO
+	sn_thread_alloc_and_run();
+}
+//TODO
+void sn_thread_std_smc_entry(void);
+//TODO
+static void sn_thread_alloc_and_run(void)
+{
+	size_t n;
+	struct thread_core_local *l = thread_get_core_local();
+	bool found_thread = false;
+	struct thread_ctx* thread;
+
+	assert(l->curr_thread == -1);
+
+	lock_global();
+
+	for (n = 0; n < CFG_NUM_THREADS; n++) {
+		if (threads[n].state == THREAD_STATE_FREE) {
+			threads[n].state = THREAD_STATE_ACTIVE;
+			found_thread = true;
+			break;
+		}
+	}
+
+	unlock_global();
+
+	if (!found_thread) {
+		DMSG("\nSNOW thread alloc error!\n");
+		return;
+	}
+
+	l->curr_thread = n;
+
+	threads[n].flags = 0;
+	thread = &threads[n];
+	thread->regs.pc = (uint64_t)sn_thread_std_smc_entry;
+
+	/*
+	 * Stdcalls starts in SVC mode with masked foreign interrupts, masked
+	 * Asynchronous abort and unmasked native interrupts.
+	 */
+	thread->regs.cpsr = SPSR_64(SPSR_64_MODE_EL1, SPSR_64_MODE_SP_EL0,
+				THREAD_EXCP_FOREIGN_INTR | DAIFBIT_ABT);
+	/* Reinitialize stack pointer */
+	thread->regs.sp = thread->stack_va_end;
+
+	/*
+	 * Copy arguments into context. This will make the
+	 * arguments appear in x0-x7 when thread is started.
+	 */
+	thread->regs.x[0] = 0;
+	thread->regs.x[1] = 0;
+	thread->regs.x[2] = 0;
+	thread->regs.x[3] = 0;
+	thread->regs.x[4] = 0; 
+	thread->regs.x[5] = 0;
+	thread->regs.x[6] = 0;
+	thread->regs.x[7] = 0;
+
+	/* Set up frame pointer as per the Aarch64 AAPCS */
+	thread->regs.x[29] = 0;
+
+	thread_lazy_save_ns_vfp();
+	thread_resume(&threads[n].regs);
+}
+
+//TODO
+void __sn_thread_std_smc_entry(struct thread_smc_args *args __attribute__((unused)))
+{
+	//struct thread_ctx *thr = threads + thread_get_id();
+
+	sn_tee_entry_std(args);
 }
 
 static void thread_alloc_and_run(struct thread_smc_args *args)
