@@ -35,6 +35,9 @@
 #include <io.h>
 #include <trace.h>
 #include <kernel/rtos_interrupt.h>
+//TODO
+#include <rtos_hardfiq.h>
+
 /* Offsets from gic.gicc_base */
 #define GICC_CTLR		(0x000)
 #define GICC_PMR		(0x004)
@@ -419,9 +422,11 @@ void gic_it_handle(struct gic_data *gd)
 	uint32_t iar;
 	uint32_t id;
 
+
 	iar = gic_read_iar(gd);
 	id = iar & GICC_IAR_IT_ID_MASK;
-
+	//TODO
+	fiq_enter();
 	if (id < gd->max_it)
 	{
 		
@@ -433,7 +438,8 @@ void gic_it_handle(struct gic_data *gd)
 	}
 	else
 		DMSG("ignoring interrupt %" PRIu32, id);
-
+	//TODO
+	fiq_exit();
 	gic_write_eoir(gd, iar);
 }
 

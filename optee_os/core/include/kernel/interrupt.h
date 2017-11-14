@@ -79,4 +79,28 @@ void itr_raise_sgi(size_t it, uint8_t cpu_mask);
  */
 void itr_set_affinity(size_t it, uint8_t cpu_mask);
 
+//TODO
+enum
+{
+	TIMER_SOFTFIQ=0,
+	NR_SOFTIRQS
+};
+
+//TODO
+struct softfiq_action
+{
+	void (*action)(void);
+};
+//TODO
+extern void raise_softfiq(unsigned int nr);
+extern void raise_softfiq_fiqoff(unsigned int nr);
+extern void wakeup_softfiqd(void);
+extern void open_softfiq(int nr, void (*action)(void));
+extern void do_softfiq(void);
+extern void __do_softfiq(void);
+
+#define __raise_softfiq_fiqoff(nr) do { or_softfiq_pending(1UL << (nr)); } while (0)
+#define or_softfiq_pending(x)  (local_softfiq_pending() |= (x))
+#define set_softfiq_pending(x) (local_softfiq_pending() = (x))
+
 #endif /*__KERNEL_INTERRUPT_H*/

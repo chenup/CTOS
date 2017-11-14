@@ -8,4 +8,7 @@
 
 typedef uint64_t u64
 extern u64 __jiffy_data jiffies_64;
+
+#define time_after_eq(a,b)	\
+	 ((long)(a) - (long)(b) >= 0)
 #endif

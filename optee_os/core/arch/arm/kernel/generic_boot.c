@@ -49,7 +49,8 @@
 #include <trace.h>
 #include <utee_defines.h>
 #include <util.h>
-
+//TODO
+#include <rtos_timer.h>
 #include <platform_config.h>
 
 #if !defined(CFG_WITH_ARM_TRUSTED_FW)
@@ -63,6 +64,7 @@
 #if defined(CFG_DT)
 #include <libfdt.h>
 #endif
+
 
 /*
  * In this file we're using unsigned long to represent physical pointers as
@@ -688,6 +690,8 @@ static void init_primary_helper(unsigned long pageable_part,
 	//main_init_gic();
 	//TODO
 	intr_init();
+	//TODO
+	init_timers();
 	//TODO
 	generic_s_timer_start();
 	init_vfp_nsec();

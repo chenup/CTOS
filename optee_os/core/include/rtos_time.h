@@ -3,6 +3,7 @@
 
 void timer_trick(void);
 void do_timer(unsigned long ticks);
-extern void update_wall_time(void);
+void update_wall_time(void);
+void update_process_times(void);
 
 #endif

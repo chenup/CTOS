@@ -8,6 +8,8 @@ srcs-y += panic.c
 #TODO
 srcs-y += rtos_time.c
 srcs-y += rtos_timer.c
+srcs-y += rtos_softfiq.c
+srcs-y += rtos_hardfiq.c
 #TODO
 srcs-y += rtos_interrupt.c
 srcs-y += handle.c

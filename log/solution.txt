@@ -129,15 +129,47 @@ optee monotonic time
 + rtos_time.h
 + rtos_timer.h
 + rtos_list.h
++ rtos_percpu.h
++ rtos_poison.h
++ rtos_hardfiq.h
++ rtos_fiq_cpustat.h
 \optee_os\core\kernel\
 + rtos_time.c
 + rtos_timer.c
++ rtos_softfiq.c
++ rtos_hardfiq.c
 \optee_os\core\kernel\sub.mk
 -> srcs-y += rtos_time.c
 -> srcs-y += rtos_timer.c
+-> srcs-y += rtos_softfiq.c
+-> srcs-y += rtos_hardfiq.c
 \optee_os\core\arch\arm\plat-vexpress\main.c
 -> #ifdef IT_SECURE_TIMER {...} #endif
 -> static void restart_s_timer(void);
+-> #include <rtos_timer.h>
+-> static void mytimer(void);
+-> static void myfunction(unsigned long data);
+-> mytimer();
+-> struct timer_list timer1;
+\optee_os\core\include\kernel\interrupt.h
+-> enum { TIMER_SOFTFIQ = 0, NR_SOFTIRQS };
+-> extern void raise_softfiq(unsigned long nr);
+-> extern void raise_softfiq_fiqoff(unsigned int nr);
+-> extern void wakeup_softfiqd(void);
+-> extern void open_softfiq(int nr, void (*action)(void));
+-> #define __raise_softfiq_fiqoff(nr) do { or_softfiq_pending(1UL << (nr)); } while (0)
+-> #define or_softfiq_pending(x)  (local_softfiq_pending() |= (x))
+-> struct softfiq_action {...};
+-> extern void do_softfiq(void);
+-> extern void __do_softfiq(void);
+-> #define set_softfiq_pending(x) (local_softfiq_pending() = (x))
+\optee_os\core\arch\arm\kernel\generic_boot.c
+-> #include <rtos_timer.h>
+-> init_timers();
+\optee_os\core\drivers\gic.c
+-> #include <rtos_hardfiq.h>
+-> fiq_enter();
+-> fiq_exit();
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee process

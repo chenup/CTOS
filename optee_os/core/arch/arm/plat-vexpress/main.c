@@ -53,10 +53,14 @@
 #include <kernel/rtos_interrupt.h>
 #include <rtos_jiffies.h>
 #include <rtos_time.h>
+//TODO
+#include <rtos_timer.h>
 
 static void main_fiq(void);
 //TODO
 static void restart_s_timer(void);
+static void mytimer(void);
+void myfunction(unsigned long data);
 
 static const struct thread_handlers handlers = {
 	.std_smc = tee_entry_std,
@@ -172,10 +176,25 @@ static enum itr_return console_itr_cb(struct itr_handler *h __unused)
 
 	while (cons->ops->have_rx_data(cons)) {
 		int ch __maybe_unused = cons->ops->getchar(cons);
-
+		//TODO
+		mytimer();
 		DMSG("cpu %zu: got 0x%x", get_core_pos(), ch);
 	}
 	return ITRR_HANDLED;
+}
+
+//TODO
+struct timer_list timer1;
+static inline void mytimer(void)
+{	
+	unsigned long delay = 1000 * 5;
+	setup_timer(&timer1, myfunction, 0, delay);
+}
+
+//TODO
+void myfunction(unsigned long data)
+{
+	DMSG("###########################TIMER: data %u ##########################", (uint32_t)data);
 }
 
 static struct itr_handler console_itr = {
@@ -204,6 +223,7 @@ static int console_itr_handler(irq_hook_t *hook __unused)
 		int ch __maybe_unused = cons->ops->getchar(cons);
 
 		DMSG("cpu %zu: got 0x%x", get_core_pos(), ch);
+		setup_timer();
 	}
 	return(1);
 }
