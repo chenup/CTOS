@@ -269,7 +269,11 @@ static void restart_s_timer()
 
 	generic_s_timer_start();
 	isb();
-	DMSG("###DEBUG###: cpu %" PRIu32, (uint32_t)get_core_pos());
+	if(jiffies_64 % 10 == 0)
+	{
+		DMSG("###DEBUG###: cpu %" PRIu32, (uint32_t)get_core_pos());
+	}
+	
 }
 
 
@@ -334,7 +338,12 @@ static enum itr_return timer_itr_cb(struct itr_handler *h __unused)
 
 	generic_s_timer_start();
 	isb();
-	DMSG("###DEBUG###: cpu %" PRIu32, (uint32_t)get_core_pos());
+	static uint32_t count = 0;
+	if(jiffies_64 % 10 == 0)
+	{
+		count++;
+		DMSG("###DEBUG### cpu %zu: jiffies %u", get_core_pos(), (uint32_t)count);
+	}
 	#endif
 	return ITRR_HANDLED;
 }
