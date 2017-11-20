@@ -173,6 +173,94 @@ static TEE_Result rpc_load(const TEE_UUID *uuid, struct shdr **ta,
 	return res;
 }
 
+//TODO
+static TEE_Result sn_ta_open(const TEE_UUID *uuid,
+			  struct user_ta_store_handle **h)
+{
+	struct user_ta_store_handle *handle;
+	struct shdr *shdr = NULL;
+	struct mobj *mobj = NULL;
+	void *hash_ctx = NULL;
+	size_t hash_ctx_size;
+	uint32_t hash_algo;
+	struct shdr *ta = NULL;
+	size_t ta_size = 0;
+	uint64_t cookie = 0;
+	TEE_Result res;
+
+	if (!crypto_ops.hash.get_ctx_size ||
+	    !crypto_ops.hash.init ||
+	    !crypto_ops.hash.update)
+		return TEE_ERROR_NOT_SUPPORTED;
+
+	handle = calloc(1, sizeof(*handle));
+	if (!handle)
+		return TEE_ERROR_OUT_OF_MEMORY;
+
+	/* Request TA from tee-supplicant */
+	/*
+	res = rpc_load(uuid, &ta, &cookie, &ta_size, &mobj);
+	if (res != TEE_SUCCESS)
+		goto error;
+	*/
+	//TODO
+	ta = (void*)0x6100000ul;
+	/* Make secure copy of signed header */
+	res = alloc_and_copy_shdr(&shdr, ta, ta_size);
+	if (res != TEE_SUCCESS)
+		goto error_free_payload;
+
+	/* Validate header signature */
+	res = check_shdr(shdr);
+	if (res != TEE_SUCCESS)
+		goto error_free_payload;
+
+	/*
+	 * Initialize a hash context and run the algorithm over the signed
+	 * header (less the final file hash and its signature of course)
+	 */
+	hash_algo = TEE_DIGEST_HASH_TO_ALGO(shdr->algo);
+	res = crypto_ops.hash.get_ctx_size(hash_algo, &hash_ctx_size);
+	if (res != TEE_SUCCESS)
+		goto error_free_payload;
+	hash_ctx = malloc(hash_ctx_size);
+	if (!hash_ctx) {
+		res = TEE_ERROR_OUT_OF_MEMORY;
+		goto error_free_payload;
+	}
+	res = crypto_ops.hash.init(hash_ctx, hash_algo);
+	if (res != TEE_SUCCESS)
+		goto error_free_payload;
+	res = crypto_ops.hash.update(hash_ctx, hash_algo, (uint8_t *)shdr,
+				     sizeof(*shdr));
+	if (res != TEE_SUCCESS)
+		goto error_free_payload;
+
+	if (ta_size != SHDR_GET_SIZE(shdr) + shdr->img_size) {
+		res = TEE_ERROR_SECURITY;
+		goto error_free_payload;
+	}
+
+	handle->nw_ta = ta;
+	handle->nw_ta_size = ta_size;
+	handle->cookie = cookie;
+	handle->offs = SHDR_GET_SIZE(shdr);
+	handle->hash_algo = hash_algo;
+	handle->hash_ctx = hash_ctx;
+	handle->shdr = shdr;
+	handle->mobj = mobj;
+	*h = handle;
+	return TEE_SUCCESS;
+
+error_free_payload:
+	//thread_rpc_free_payload(cookie, mobj);
+error:
+	free(hash_ctx);
+	free(shdr);
+	free(handle);
+	return res;
+}
+
 static TEE_Result ta_open(const TEE_UUID *uuid,
 			  struct user_ta_store_handle **h)
 {
@@ -331,9 +419,25 @@ static const struct user_ta_store_ops ops = {
 	.close = ta_close,
 };
 
+//TODO
+static const struct user_ta_store_ops sn_ops = {
+	.open = sn_ta_open,
+	.get_size = ta_get_size,
+	.read = ta_read,
+	.close = ta_close,
+};
+
 static TEE_Result register_supplicant_user_ta(void)
 {
 	return tee_ta_register_ta_store(&ops);
 }
 
+//TODO
+static TEE_Result sn_register_supplicant_user_ta(void)
+{
+	return sn_tee_ta_register_ta_store(&sn_ops);
+}
+
 service_init(register_supplicant_user_ta);
+//TODO
+service_init(sn_register_supplicant_user_ta);

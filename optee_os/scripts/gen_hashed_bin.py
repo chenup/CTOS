@@ -172,9 +172,10 @@ def main():
 		outf = args.out
 		write_header_v1(outf, init_size, args, paged_size)
 		append_to(outf, 0, tee_pager_fname)
-		append_to(outf, 0, tee_pageable_fname, init_bin_size)
 		#TODO
 		append_to(outf, 0, './process.ta')
+		append_to(outf, 0, tee_pageable_fname, init_bin_size)
+		
 		append_hashes(outf, tee_pageable_fname)
 		append_to(outf, init_bin_size, tee_pageable_fname)
 		outf.close()

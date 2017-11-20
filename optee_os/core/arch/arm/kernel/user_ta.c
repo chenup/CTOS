@@ -275,7 +275,7 @@ static TEE_Result ta_load(const TEE_UUID *uuid,
 	    TA_FLAG_INSTANCE_KEEP_ALIVE | TA_FLAG_CACHE_MAINTENANCE;
 	struct user_ta_ctx *utc = NULL;
 	struct ta_head *ta_head;
-	struct user_ta_store_handle *ta_handle = NULL;
+	//struct user_ta_store_handle *ta_handle = NULL;
 
 	res = ta_store->open(uuid, &ta_handle);
 	if (res != TEE_SUCCESS)
@@ -592,6 +592,15 @@ static const struct tee_ta_ops user_ta_ops __rodata_unpaged = {
 };
 
 static const struct user_ta_store_ops *user_ta_store;
+//TODO
+static const struct user_ta_store_ops *sn_user_ta_store;
+
+//TODO
+TEE_Result sn_tee_ta_register_ta_store(const struct user_ta_store_ops *ops)
+{
+	sn_user_ta_store = ops;
+	return TEE_SUCCESS;
+}
 
 TEE_Result tee_ta_register_ta_store(const struct user_ta_store_ops *ops)
 {
@@ -609,6 +618,22 @@ TEE_Result tee_ta_init_user_ta_session(const TEE_UUID *uuid,
 
 	DMSG("Load user TA %pUl", (void *)uuid);
 	res = ta_load(uuid, user_ta_store, &s->ctx);
+	if (res == TEE_SUCCESS)
+		s->ctx->ops = &user_ta_ops;
+	return res;
+}
+
+//TODO
+TEE_Result sn_tee_ta_init_user_ta_session(const TEE_UUID *uuid,
+			struct tee_ta_session *s)
+{
+	TEE_Result res;
+
+	if (!sn_user_ta_store)
+		return TEE_ERROR_ITEM_NOT_FOUND;
+
+	DMSG("Load user TA %pUl", (void *)uuid);
+	res = ta_load(uuid, sn_user_ta_store, &s->ctx);
 	if (res == TEE_SUCCESS)
 		s->ctx->ops = &user_ta_ops;
 	return res;

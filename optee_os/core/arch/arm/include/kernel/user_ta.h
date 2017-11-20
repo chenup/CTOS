@@ -101,4 +101,7 @@ static inline TEE_Result tee_ta_register_ta_store(
 }
 #endif
 
+//TODO
+TEE_Result sn_tee_ta_register_ta_store(const struct user_ta_store_ops *ops);
+TEE_Result sn_tee_ta_init_user_ta_session(const TEE_UUID *uuid, struct tee_ta_session *s);
 #endif /*KERNEL_USER_TA_H*/

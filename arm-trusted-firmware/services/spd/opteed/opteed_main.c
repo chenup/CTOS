@@ -272,7 +272,11 @@ int32_t opteed_setup(void)
 				   paged_part, mem_limit,
 				   &opteed_sp_context[linear_id]);
 	//TODO
-	ep_info->args.arg3 = init_size; 
+	// init_size 是打包后镜像的大小
+	//ep_info->args.arg3 = init_size; 
+	//optee初始化的时候原先内存里镜像里的位置会被覆盖，不被optee内核使用的区域覆盖
+	//optee内核区域0x6000000 ~ 0x6100000
+	// 0x226c4u是ta的大小
 	memcpy((void*)0x6100000ul, (void*)(0x6000000ul+init_size-0x226c4), 0x226c4u);
 	//TODO_END
 	/*

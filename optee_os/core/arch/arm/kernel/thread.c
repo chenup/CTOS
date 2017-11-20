@@ -147,7 +147,7 @@ thread_pm_handler_t thread_system_off_handler_ptr;
 thread_pm_handler_t thread_system_reset_handler_ptr;
 
 //TODO
-unsigned int sn_optee_size = -1;
+//unsigned int sn_optee_size = -1;
 
 static unsigned int thread_global_lock = SPINLOCK_UNLOCK;
 static bool thread_prealloc_rpc_cache;
@@ -496,7 +496,6 @@ static void sn_thread_alloc_and_run(void)
 void __sn_thread_std_smc_entry(struct thread_smc_args *args __attribute__((unused)))
 {
 	//struct thread_ctx *thr = threads + thread_get_id();
-
 	sn_tee_entry_std(args);
 }
 

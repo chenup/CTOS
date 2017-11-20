@@ -175,7 +175,7 @@ optee monotonic time
 optee process
 ++++++++++++++++++++++++++++++++++++++++++++++++
 \hello_world\ta\hello_world_ta.c
--> TA_OpenSessionEntryPoint()
+-> TA_OpenSessionEntryPoint(){...}
 \optee_os\
 + process.ta ( \hello_world\ta\*.ta )
 \optee_os\out\arm\core\
@@ -183,29 +183,35 @@ optee process
 \optee_os\scripts\gen_hashed_bin.py
 -> append_to(outf, 0, './process.ta')
 \arm-trusted-firmware\services\spd\opteed\opteed_main.c
--> opteed_setup()
+-> memcpy((void*)0x6100000ul, (void*)(0x6000000ul+init_size-0x226c4), 0x226c4u); (opteed_setup(void))
 \optee_os\core\kernel\tee_ta_manager.c
--> sn_tee_ta_init_session()
--> sn_tee_ta_open_session()
+-> static TEE_Result sn_tee_ta_init_session(...){...}
+-> TEE_Result sn_tee_ta_open_session(...){...}
 \optee_os\core\include\kernel\tee_ta_manager.h
--> sn_tee_ta_open_session()
+-> TEE_Result sn_tee_ta_open_session(...);
 \optee_os\core\arch\arm\tee\entry_std.c
--> sn_entry_open_session()
--> sn_tee_entry_std()
+-> static void sn_entry_open_session(struct thread_smc_args *smc_args){...}
+-> void sn_tee_entry_std(struct thread_smc_args *smc_args){...}
 \optee_os\core\arch\arm\include\tee\entry_std.h
--> sn_tee_entry_std()
+-> void sn_tee_entry_std(struct thread_smc_args *args);
 \optee_os\core\arch\arm\kernel\thread.c
--> unsigned int sn_optee_size = -1;
 -> void sn_thread_std_smc_entry(void);
--> sn_thread_alloc_and_run()
--> __sn_thread_std_smc_entry()
--> thread_clr_boot_thread()
+-> static void sn_thread_alloc_and_run(void){...}
+-> void __sn_thread_std_smc_entry(struct thread_smc_args *args __attribute__((unused))){...}
+-> sn_thread_alloc_and_run();
 \optee_os\core\arch\arm\kernel\thread_private.h
 -> void __sn_thread_std_smc_entry(struct thread_smc_args *args);
 \optee_os\core\arch\arm\kernel\thread_a64.S
--> FUNC sn_thread_std_smc_entry {...} END_FUNC sn_thread_std_smc_entry
-
-
-
-
-
+-> FUNC sn_thread_std_smc_entry {... bl	__sn_thread_std_smc_entry ...} END_FUNC sn_thread_std_smc_entry
+\optee_os\core\arch\arm\include\kernel\user_ta.h
+-> TEE_Result sn_tee_ta_init_user_ta_session(const TEE_UUID *uuid, struct tee_ta_session *s);
+-> TEE_Result sn_tee_ta_register_ta_store(const struct user_ta_store_ops *ops);
+\optee_os\core\arch\arm\kernel\user_ta.c
+-> static const struct user_ta_store_ops *sn_user_ta_store;
+-> TEE_Result sn_tee_ta_register_ta_store(const struct user_ta_store_ops *ops){...}
+-> TEE_Result sn_tee_ta_init_user_ta_session(const TEE_UUID *uuid, struct tee_ta_session *s){...}
+\optee_os\core\arch\arm\kernel\ree_fs_ta.c
+-> static TEE_Result sn_register_supplicant_user_ta(void){...}
+-> service_init(sn_register_supplicant_user_ta);
+-> static const struct user_ta_store_ops sn_ops = {.open = sn_ta_open ...};
+-> static TEE_Result sn_ta_open(const TEE_UUID *uuid, struct user_ta_store_handle **h){...}
