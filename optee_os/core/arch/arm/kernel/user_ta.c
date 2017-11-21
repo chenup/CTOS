@@ -264,6 +264,78 @@ out:
  * Verifies the TA signature.
  * Returns context ptr and TEE_Result.
  *---------------------------------------------------------------------------*/
+//TODO
+static TEE_Result sn_ta_load(const TEE_UUID *uuid,
+			  const struct user_ta_store_ops *ta_store,
+			  struct tee_ta_ctx **ta_ctx)
+{
+	TEE_Result res;
+	uint32_t mandatory_flags = TA_FLAG_USER_MODE | TA_FLAG_EXEC_DDR;
+	uint32_t optional_flags = mandatory_flags | TA_FLAG_SINGLE_INSTANCE |
+	    TA_FLAG_MULTI_SESSION | TA_FLAG_SECURE_DATA_PATH |
+	    TA_FLAG_INSTANCE_KEEP_ALIVE | TA_FLAG_CACHE_MAINTENANCE;
+	struct user_ta_ctx *utc = NULL;
+	struct ta_head *ta_head;
+	struct user_ta_store_handle *ta_handle = NULL;
+
+	res = ta_store->open(uuid, &ta_handle);
+	if (res != TEE_SUCCESS)
+		return res;
+
+	/* Register context */
+	utc = calloc(1, sizeof(struct user_ta_ctx));
+	if (!utc) {
+		res = TEE_ERROR_OUT_OF_MEMORY;
+		goto error_return;
+	}
+	TAILQ_INIT(&utc->open_sessions);
+	TAILQ_INIT(&utc->cryp_states);
+	TAILQ_INIT(&utc->objects);
+	TAILQ_INIT(&utc->storage_enums);
+
+	res = load_elf(utc, ta_store, ta_handle);
+	if (res != TEE_SUCCESS)
+		goto error_return;
+
+	utc->load_addr = tee_mmu_get_load_addr(&utc->ctx);
+	ta_head = (struct ta_head *)(vaddr_t)utc->load_addr;
+
+	/* check input flags bitmask consistency and save flags */
+	if ((ta_head->flags & optional_flags) != ta_head->flags ||
+	    (ta_head->flags & mandatory_flags) != mandatory_flags) {
+		EMSG("TA flag issue: flags=%x optional=%x mandatory=%x",
+		     ta_head->flags, optional_flags, mandatory_flags);
+		res = TEE_ERROR_BAD_FORMAT;
+		goto error_return;
+	}
+
+	DMSG("ELF load address 0x%x", utc->load_addr);
+	utc->ctx.flags = ta_head->flags;
+	utc->ctx.uuid = ta_head->uuid;
+	utc->entry_func = ta_head->entry.ptr64;
+	utc->ctx.ref_count = 1;
+	condvar_init(&utc->ctx.busy_cv);
+	TAILQ_INSERT_TAIL(&tee_ctxes, &utc->ctx, link);
+	*ta_ctx = &utc->ctx;
+
+	tee_mmu_set_ctx(NULL);
+	ta_store->close(ta_handle);
+	return TEE_SUCCESS;
+
+error_return:
+	ta_store->close(ta_handle);
+	tee_mmu_set_ctx(NULL);
+	if (utc) {
+		pgt_flush_ctx(&utc->ctx);
+		tee_pager_rem_uta_areas(utc);
+		tee_mmu_final(utc);
+		mobj_free(utc->mobj_code);
+		mobj_free(utc->mobj_stack);
+		free(utc);
+	}
+	return res;
+}
+
 static TEE_Result ta_load(const TEE_UUID *uuid,
 			  const struct user_ta_store_ops *ta_store,
 			  struct tee_ta_ctx **ta_ctx)
@@ -275,7 +347,7 @@ static TEE_Result ta_load(const TEE_UUID *uuid,
 	    TA_FLAG_INSTANCE_KEEP_ALIVE | TA_FLAG_CACHE_MAINTENANCE;
 	struct user_ta_ctx *utc = NULL;
 	struct ta_head *ta_head;
-	//struct user_ta_store_handle *ta_handle = NULL;
+	struct user_ta_store_handle *ta_handle = NULL;
 
 	res = ta_store->open(uuid, &ta_handle);
 	if (res != TEE_SUCCESS)
@@ -633,7 +705,7 @@ TEE_Result sn_tee_ta_init_user_ta_session(const TEE_UUID *uuid,
 		return TEE_ERROR_ITEM_NOT_FOUND;
 
 	DMSG("Load user TA %pUl", (void *)uuid);
-	res = ta_load(uuid, sn_user_ta_store, &s->ctx);
+	res = sn_ta_load(uuid, sn_user_ta_store, &s->ctx);
 	if (res == TEE_SUCCESS)
 		s->ctx->ops = &user_ta_ops;
 	return res;

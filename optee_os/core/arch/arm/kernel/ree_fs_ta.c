@@ -205,6 +205,7 @@ static TEE_Result sn_ta_open(const TEE_UUID *uuid,
 	*/
 	//TODO
 	ta = (void*)0x6100000ul;
+	ta_size = 140996;
 	/* Make secure copy of signed header */
 	res = alloc_and_copy_shdr(&shdr, ta, ta_size);
 	if (res != TEE_SUCCESS)
@@ -290,6 +291,8 @@ static TEE_Result ta_open(const TEE_UUID *uuid,
 		goto error;
 
 	/* Make secure copy of signed header */
+	//res = memcmp(ta, 0x6100000ul, 140996);
+	//DMSG();
 	res = alloc_and_copy_shdr(&shdr, ta, ta_size);
 	if (res != TEE_SUCCESS)
 		goto error_free_payload;
@@ -402,6 +405,17 @@ static TEE_Result ta_read(struct user_ta_store_handle *h, void *data,
 	return res;
 }
 
+//TODO
+static void sn_ta_close(struct user_ta_store_handle *h)
+{
+	if (!h)
+		return;
+	//thread_rpc_free_payload(h->cookie, h->mobj);
+	free(h->hash_ctx);
+	free(h->shdr);
+	free(h);
+}
+
 static void ta_close(struct user_ta_store_handle *h)
 {
 	if (!h)
@@ -424,7 +438,7 @@ static const struct user_ta_store_ops sn_ops = {
 	.open = sn_ta_open,
 	.get_size = ta_get_size,
 	.read = ta_read,
-	.close = ta_close,
+	.close = sn_ta_close,
 };
 
 static TEE_Result register_supplicant_user_ta(void)

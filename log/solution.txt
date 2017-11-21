@@ -174,6 +174,7 @@ optee monotonic time
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee process
 ++++++++++++++++++++++++++++++++++++++++++++++++
+######phase 1######
 \hello_world\ta\hello_world_ta.c
 -> TA_OpenSessionEntryPoint(){...}
 \optee_os\
@@ -181,6 +182,9 @@ optee process
 \optee_os\out\arm\core\
 - tee.bin
 \optee_os\scripts\gen_hashed_bin.py
+-> ta_size = os.path.getsize("./process.ta");
+-> init_size = pager_input_size + min(init_bin_size, paged_input_size) + hash_size + ta_size
+-> append_to(outf, 0, './process.ta')
 -> append_to(outf, 0, './process.ta')
 \arm-trusted-firmware\services\spd\opteed\opteed_main.c
 -> memcpy((void*)0x6100000ul, (void*)(0x6000000ul+init_size-0x226c4), 0x226c4u); (opteed_setup(void))
@@ -195,6 +199,7 @@ optee process
 \optee_os\core\arch\arm\include\tee\entry_std.h
 -> void sn_tee_entry_std(struct thread_smc_args *args);
 \optee_os\core\arch\arm\kernel\thread.c
+-> #include <tee\entry_std.h>
 -> void sn_thread_std_smc_entry(void);
 -> static void sn_thread_alloc_and_run(void){...}
 -> void __sn_thread_std_smc_entry(struct thread_smc_args *args __attribute__((unused))){...}
@@ -210,8 +215,17 @@ optee process
 -> static const struct user_ta_store_ops *sn_user_ta_store;
 -> TEE_Result sn_tee_ta_register_ta_store(const struct user_ta_store_ops *ops){...}
 -> TEE_Result sn_tee_ta_init_user_ta_session(const TEE_UUID *uuid, struct tee_ta_session *s){...}
+-> static TEE_Result sn_ta_load(...){...}
 \optee_os\core\arch\arm\kernel\ree_fs_ta.c
 -> static TEE_Result sn_register_supplicant_user_ta(void){...}
 -> service_init(sn_register_supplicant_user_ta);
--> static const struct user_ta_store_ops sn_ops = {.open = sn_ta_open ...};
+-> static const struct user_ta_store_ops sn_ops = {.open = sn_ta_open, .close = sn_ta_close};
+-> static void sn_ta_close(struct user_ta_store_handle *h){...}
 -> static TEE_Result sn_ta_open(const TEE_UUID *uuid, struct user_ta_store_handle **h){...}
+\optee_os\core\arch\arm\plat-vexpress\platform_config.h
+-> #define CFG_TEE_RAM_VA_SIZE (2 * 1024 * 1024)
+
+######phase 2######
+\optee_os\core\arch\arm\tee\arch_svc.c
+-> SYSCALL_ENTRY(syscall_sn_test),
+

@@ -50,7 +50,8 @@
 #include <tee/tee_cryp_utl.h>
 #include <trace.h>
 #include <util.h>
-
+//TODO
+#include <tee\entry_std.h>
 #include "thread_private.h"
 
 #ifdef CFG_WITH_ARM_TRUSTED_FW

@@ -36,6 +36,7 @@ import hashlib
 arch_id = {'arm32': 0, 'arm64': 1}
 image_id = {'pager': 0, 'paged': 1}
 
+
 def write_header_v1(outf, init_size, args, paged_size):
 	magic = 0x4554504f # 'OPTE'
 	version = 1;
@@ -154,6 +155,8 @@ def main():
 	tee_pageable_fname = args.tee_pageable_bin
 	pager_input_size   = os.path.getsize(tee_pager_fname);
 	paged_input_size   = os.path.getsize(tee_pageable_fname);
+	#TODO
+	ta_size 		   = os.path.getsize("./process.ta");
 	hash_size          = paged_input_size / (4 * 1024) * \
 			     hashlib.sha256().digest_size
 
@@ -162,9 +165,10 @@ def main():
 			repr(paged_input_size))
 		sys.exit(1)
 
+	#TODO
 	init_size	  = pager_input_size + \
 			    min(init_bin_size, paged_input_size) + \
-			    hash_size
+			    hash_size + ta_size
 	paged_size	  = paged_input_size - \
 			    min(init_bin_size, paged_input_size)
 
@@ -175,11 +179,10 @@ def main():
 		#TODO
 		append_to(outf, 0, './process.ta')
 		append_to(outf, 0, tee_pageable_fname, init_bin_size)
-		
 		append_hashes(outf, tee_pageable_fname)
 		append_to(outf, init_bin_size, tee_pageable_fname)
 		outf.close()
-
+	
 	if args.out_header_v2 is not None:
 		outf = args.out_header_v2
 		write_header_v2(outf, init_size, args, paged_size)
@@ -188,6 +191,8 @@ def main():
 	if args.out_pager_v2 is not None:
 		outf = args.out_pager_v2
 		append_to(outf, 0, tee_pager_fname)
+		#TODO
+		append_to(outf, 0, './process.ta')
 		append_to(outf, 0, tee_pageable_fname, init_bin_size)
 		append_hashes(outf, tee_pageable_fname)
 		outf.close()

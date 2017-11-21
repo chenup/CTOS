@@ -134,6 +134,8 @@ static const struct syscall_entry tee_svc_syscall_table[] = {
 	SYSCALL_ENTRY(syscall_se_channel_transmit),
 	SYSCALL_ENTRY(syscall_se_channel_close),
 	SYSCALL_ENTRY(syscall_cache_operation),
+	//TODO
+	SYSCALL_ENTRY(syscall_sn_test),
 };
 
 #ifdef TRACE_SYSCALLS
