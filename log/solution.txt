@@ -42,12 +42,14 @@ Static TA
 + tee_core_cp.c
 + tee_core_extern.h
 + tee_client_api.c
+
 ~\Makefile
 -> tee-objs += tee_core_cp.o
 -> tee-objs += tee_client_api.o
 
 \linux-optee\drivers\tee\optee
 + tee_filter.c
+
 ~\Makefile
 -> optee-objs += tee_filter.o
 
@@ -70,10 +72,13 @@ Static TA : test_idle
 ++++++++++++++++++++++++++++++++++++++++++++++++
 \optee_os\core\arch\arm\pta\
 + test_idle.c
+
 ~\sub.mk
 -> srcs-$(CFG_TEE_CORE_EMBED_INTERNAL_TESTS) += test_idle.c
+
 \hello_world\ta\include\hello_world_ta.h
 -> #define STA_TEST_IDLE_UUID
+
 \hello_world\host\main.c
 -> TEEC_UUID uuid = STA_TEST_IDLE_UUID;
 -> res = TEEC_InvokeCommand(&sess, 163, &op, &err_origin);
@@ -90,30 +95,39 @@ expand optee with minix
 ++++++++++++++++++++++++++++++++++++++++++++++++
 \optee_os\core\include\drivers\
 + rtos_bsp_intr.h
+
 \optee_os\core\drivers\
 + rtos_bsp_intr.c
+
 \optee_os\core\drivers\gic.c
 -> void gic_it_enable (remove static)
 -> void gic_it_disable (remove static)
 -> void gic_it_add (remove static)
 -> irq_handle(id);
+
 \optee_os\core\include\drivers\gic.h
 -> void gic_it_enable(struct gic_data *gd, size_t it);
 -> void gic_it_disable(struct gic_data *gd, size_t it);
 -> void gic_it_add(struct gic_data *gd, size_t it);
+
 \optee_os\core\arch\arm\kernel\generic_boot.c
 -> intr_init();
 -> static void intr_init(void){}
+
 \optee_os\core\include\kernel\
 + rtos_type.h
 + rtos_interrupt.h
 + rtos_glo.h
+
 \optee_os\core\kernel\
 + rtos_interrupt.c
+
 \optee_os\core\drivers\sub.mk
 -> srcs-$(CFG_GIC) += rtos_bsp_intr.c
+
 \optee_os\core\kernel\sub.mk
 -> srcs-y += rtos_interrupt.c
+
 \optee_os\core\arch\arm\plat-vexpress\main.c
 -> struct gic_data gic_data; (remove static)
 -> #ifdef IT_SECURE_TIMER {} #endif
@@ -133,16 +147,19 @@ optee monotonic time
 + rtos_poison.h
 + rtos_hardfiq.h
 + rtos_fiq_cpustat.h
+
 \optee_os\core\kernel\
 + rtos_time.c
 + rtos_timer.c
 + rtos_softfiq.c
 + rtos_hardfiq.c
+
 \optee_os\core\kernel\sub.mk
 -> srcs-y += rtos_time.c
 -> srcs-y += rtos_timer.c
 -> srcs-y += rtos_softfiq.c
 -> srcs-y += rtos_hardfiq.c
+
 \optee_os\core\arch\arm\plat-vexpress\main.c
 -> #ifdef IT_SECURE_TIMER {...} #endif
 -> static void restart_s_timer(void);
@@ -151,6 +168,7 @@ optee monotonic time
 -> static void myfunction(unsigned long data);
 -> mytimer();
 -> struct timer_list timer1;
+
 \optee_os\core\include\kernel\interrupt.h
 -> enum { TIMER_SOFTFIQ = 0, NR_SOFTIRQS };
 -> extern void raise_softfiq(unsigned long nr);
@@ -163,9 +181,11 @@ optee monotonic time
 -> extern void do_softfiq(void);
 -> extern void __do_softfiq(void);
 -> #define set_softfiq_pending(x) (local_softfiq_pending() = (x))
+
 \optee_os\core\arch\arm\kernel\generic_boot.c
 -> #include <rtos_timer.h>
 -> init_timers();
+
 \optee_os\core\drivers\gic.c
 -> #include <rtos_hardfiq.h>
 -> fiq_enter();
@@ -177,55 +197,79 @@ optee process
 ######phase 1######
 \hello_world\ta\hello_world_ta.c
 -> TA_OpenSessionEntryPoint(){...}
+
 \optee_os\
 + process.ta ( \hello_world\ta\*.ta )
+
 \optee_os\out\arm\core\
 - tee.bin
+
 \optee_os\scripts\gen_hashed_bin.py
 -> ta_size = os.path.getsize("./process.ta");
 -> init_size = pager_input_size + min(init_bin_size, paged_input_size) + hash_size + ta_size
--> append_to(outf, 0, './process.ta')
--> append_to(outf, 0, './process.ta')
+-> append_to(outf, 0, './process.ta') (args.out)
+-> append_to(outf, 0, './process.ta') (args.out_pager_v2)
+
 \arm-trusted-firmware\services\spd\opteed\opteed_main.c
 -> memcpy((void*)0x6100000ul, (void*)(0x6000000ul+init_size-0x226c4), 0x226c4u); (opteed_setup(void))
+
 \optee_os\core\kernel\tee_ta_manager.c
 -> static TEE_Result sn_tee_ta_init_session(...){...}
 -> TEE_Result sn_tee_ta_open_session(...){...}
+
 \optee_os\core\include\kernel\tee_ta_manager.h
 -> TEE_Result sn_tee_ta_open_session(...);
+
 \optee_os\core\arch\arm\tee\entry_std.c
 -> static void sn_entry_open_session(struct thread_smc_args *smc_args){...}
 -> void sn_tee_entry_std(struct thread_smc_args *smc_args){...}
+
 \optee_os\core\arch\arm\include\tee\entry_std.h
 -> void sn_tee_entry_std(struct thread_smc_args *args);
+
 \optee_os\core\arch\arm\kernel\thread.c
 -> #include <tee\entry_std.h>
 -> void sn_thread_std_smc_entry(void);
 -> static void sn_thread_alloc_and_run(void){...}
 -> void __sn_thread_std_smc_entry(struct thread_smc_args *args __attribute__((unused))){...}
 -> sn_thread_alloc_and_run();
+
 \optee_os\core\arch\arm\kernel\thread_private.h
 -> void __sn_thread_std_smc_entry(struct thread_smc_args *args);
+
 \optee_os\core\arch\arm\kernel\thread_a64.S
 -> FUNC sn_thread_std_smc_entry {... bl	__sn_thread_std_smc_entry ...} END_FUNC sn_thread_std_smc_entry
+
 \optee_os\core\arch\arm\include\kernel\user_ta.h
 -> TEE_Result sn_tee_ta_init_user_ta_session(const TEE_UUID *uuid, struct tee_ta_session *s);
 -> TEE_Result sn_tee_ta_register_ta_store(const struct user_ta_store_ops *ops);
+
 \optee_os\core\arch\arm\kernel\user_ta.c
 -> static const struct user_ta_store_ops *sn_user_ta_store;
 -> TEE_Result sn_tee_ta_register_ta_store(const struct user_ta_store_ops *ops){...}
 -> TEE_Result sn_tee_ta_init_user_ta_session(const TEE_UUID *uuid, struct tee_ta_session *s){...}
 -> static TEE_Result sn_ta_load(...){...}
+
 \optee_os\core\arch\arm\kernel\ree_fs_ta.c
 -> static TEE_Result sn_register_supplicant_user_ta(void){...}
 -> service_init(sn_register_supplicant_user_ta);
 -> static const struct user_ta_store_ops sn_ops = {.open = sn_ta_open, .close = sn_ta_close};
 -> static void sn_ta_close(struct user_ta_store_handle *h){...}
 -> static TEE_Result sn_ta_open(const TEE_UUID *uuid, struct user_ta_store_handle **h){...}
+
 \optee_os\core\arch\arm\plat-vexpress\platform_config.h
 -> #define CFG_TEE_RAM_VA_SIZE (2 * 1024 * 1024)
 
 ######phase 2######
+\optee_os\scripts\gen_hashed_bin.py
+-> process1_size	   = os.path.getsize("./process1.ta");
+-> process2_size	   = os.path.getsize("./process2.ta");
+-> init_size = pager_input_size + min(init_bin_size, paged_input_size) + hash_size + process1_size + process2_size
+-> append_to(outf, 0, './process1.ta') (args.out)
+-> append_to(outf, 0, './process2.ta')
+-> append_to(outf, 0, './process1.ta') (args.out_pager_v2)
+-> append_to(outf, 0, './process2.ta')
+
 \optee_os\core\arch\arm\tee\arch_svc.c
 -> SYSCALL_ENTRY(syscall_sn_test),
 

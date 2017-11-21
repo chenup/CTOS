@@ -156,7 +156,10 @@ def main():
 	pager_input_size   = os.path.getsize(tee_pager_fname);
 	paged_input_size   = os.path.getsize(tee_pageable_fname);
 	#TODO
-	ta_size 		   = os.path.getsize("./process.ta");
+	#ta_size 		   = os.path.getsize("./process.ta");
+	#TODO
+	process1_size	   = os.path.getsize("./process1.ta");
+	process2_size	   = os.path.getsize("./process2.ta");
 	hash_size          = paged_input_size / (4 * 1024) * \
 			     hashlib.sha256().digest_size
 
@@ -166,9 +169,13 @@ def main():
 		sys.exit(1)
 
 	#TODO
+	#init_size	  = pager_input_size + \
+			    #min(init_bin_size, paged_input_size) + \
+			    #hash_size + ta_size
+	#TODO
 	init_size	  = pager_input_size + \
 			    min(init_bin_size, paged_input_size) + \
-			    hash_size + ta_size
+			    hash_size + process1_size + process2_size
 	paged_size	  = paged_input_size - \
 			    min(init_bin_size, paged_input_size)
 
@@ -177,7 +184,10 @@ def main():
 		write_header_v1(outf, init_size, args, paged_size)
 		append_to(outf, 0, tee_pager_fname)
 		#TODO
-		append_to(outf, 0, './process.ta')
+		#append_to(outf, 0, './process.ta')
+		#TODO
+		append_to(outf, 0, './process1.ta')
+		append_to(outf, 0, './process2.ta')
 		append_to(outf, 0, tee_pageable_fname, init_bin_size)
 		append_hashes(outf, tee_pageable_fname)
 		append_to(outf, init_bin_size, tee_pageable_fname)
@@ -192,7 +202,10 @@ def main():
 		outf = args.out_pager_v2
 		append_to(outf, 0, tee_pager_fname)
 		#TODO
-		append_to(outf, 0, './process.ta')
+		#append_to(outf, 0, './process.ta')
+		#TODO
+		append_to(outf, 0, './process1.ta')
+		append_to(outf, 0, './process2.ta')
 		append_to(outf, 0, tee_pageable_fname, init_bin_size)
 		append_hashes(outf, tee_pageable_fname)
 		outf.close()
