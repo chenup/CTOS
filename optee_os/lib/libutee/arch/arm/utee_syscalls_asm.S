@@ -187,3 +187,6 @@
                 TEE_SCN_SE_CHANNEL_CLOSE, 1
 
         UTEE_SYSCALL utee_cache_operation, TEE_SCN_CACHE_OPERATION, 3
+
+        //TODO
+        UTEE_SYSCALL utee_sn_test, TEE_SCN_SN_TEST, 0

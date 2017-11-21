@@ -57,6 +57,9 @@ void utee_log(const void *buf, size_t len);
 
 void utee_panic(unsigned long code) __noreturn;
 
+//TODO
+void utee_sn_test(void) __noreturn;
+
 /* prop_set is TEE_PROPSET_xxx*/
 TEE_Result utee_get_property(unsigned long prop_set, unsigned long index,
 			     void *name, uint32_t *name_len,

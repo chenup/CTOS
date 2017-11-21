@@ -290,6 +290,32 @@ FUNC thread_rpc , :
 	ret
 END_FUNC thread_rpc
 
+/* TODO */
+FUNC sn_thread_sched , :
+	/* Read daif and create an SPSR */
+	mrs	x1, daif
+	orr	x1, x1, #(SPSR_64_MODE_EL1 << SPSR_64_MODE_EL_SHIFT)
+
+	/* Mask all maskable exceptions before switching to temporary stack */
+	msr	daifset, #DAIFBIT_ALL
+	push	x1, x30
+	bl	thread_get_ctx_regs
+	ldr	x30, [sp, #8]
+	store_xregs x0, THREAD_CTX_REGS_X19, 19, 30
+	mov	x19, x0
+
+	bl	thread_get_tmp_sp
+	pop	x1, xzr		/* Match "push x1, x30" above */
+	mov	x2, sp
+	str	x2, [x19, #THREAD_CTX_REGS_SP]
+	mov	sp, x0		/* Switch to tmp stack */
+
+	adr	x0, .sn_thread_sched_return
+	b	sn_thread_state_suspend
+.sn_thread_sched_return:
+	ret
+END_FUNC sn_thread_sched
+
 FUNC thread_init_vbar , :
 	adr	x0, thread_vect_table
 	msr	vbar_el1, x0

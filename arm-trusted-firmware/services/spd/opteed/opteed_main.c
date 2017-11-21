@@ -277,8 +277,9 @@ int32_t opteed_setup(void)
 	//optee初始化的时候原先内存里镜像里的位置会被覆盖，不被optee内核使用的区域覆盖
 	//optee内核区域0x6000000 ~ 0x6100000
 	// 0x226c4u是ta的大小
-	memcpy((void*)0x6100000ul, (void*)(0x6000000ul+init_size-0x226c4), 0x226c4u);
-	//TODO_END
+	//memcpy((void*)0x6100000ul, (void*)(0x6000000ul+init_size-0x226c4), 0x226c4u);
+	//TODO
+	memcpy((void*)0x6100000ul, (void*)(0x6000000ul + init_size - 0x44d88), 0x44d88u);
 	/*
 	 * All OPTEED initialization done. Now register our init function with
 	 * BL31 for deferred invocation

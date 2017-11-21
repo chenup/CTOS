@@ -1476,3 +1476,67 @@ void thread_rpc_free_payload(uint64_t cookie, struct mobj *mobj)
 {
 	thread_rpc_free(OPTEE_MSG_RPC_SHM_TYPE_APPL, cookie, mobj);
 }
+
+//TODO
+int sn_ta_num = 0;
+
+//TODO
+void sn_thread_state_suspend(vaddr_t pc, uint32_t cpsr)
+{
+	struct thread_core_local *l = thread_get_core_local();
+	int ct = l->curr_thread;
+	int i = 0;
+
+	assert(ct != -1);
+
+	thread_check_canaries();
+
+	thread_lazy_restore_ns_vfp();
+
+	lock_global();
+
+	assert(threads[ct].state == THREAD_STATE_ACTIVE);
+	//threads[ct].flags |= flags;
+	threads[ct].regs.cpsr = cpsr;
+	threads[ct].regs.pc = pc;
+	threads[ct].state = THREAD_STATE_SUSPENDED;
+
+	threads[ct].have_user_map = core_mmu_user_mapping_is_active();
+	if (threads[ct].have_user_map) {
+		core_mmu_get_user_map(&threads[ct].user_map);
+		core_mmu_set_user_map(NULL);
+	}
+
+	l->curr_thread = -1;
+
+	unlock_global();
+	ct++;
+	for(i=1; i<8; i++) {
+		if(threads[ct].state == THREAD_STATE_SUSPENDED)
+			break;	
+		ct++;
+		ct %= 8;
+	}
+	//DMSG("SNOW int %d:%d\n", i, ct);
+	if(i == 8) {
+		sn_ta_num = 1;
+		sn_thread_alloc_and_run();
+	}
+	assert(l->curr_thread == -1);
+
+	lock_global();
+
+	if (ct < CFG_NUM_THREADS &&
+	    threads[ct].state == THREAD_STATE_SUSPENDED)
+		threads[ct].state = THREAD_STATE_ACTIVE;
+
+	unlock_global();
+
+	l->curr_thread = ct;
+
+	if (threads[ct].have_user_map)
+		core_mmu_set_user_map(&threads[ct].user_map);
+
+	thread_lazy_save_ns_vfp();
+	thread_resume(&threads[ct].regs);
+}

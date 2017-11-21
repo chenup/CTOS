@@ -215,7 +215,8 @@ void __noreturn __utee_entry(unsigned long func, unsigned long session_id,
 			struct utee_params *up, unsigned long cmd_id)
 {
 	TEE_Result res;
-
+	//TODO
+	unsigned num = 0;
 #if defined(ARM32) && defined(CFG_UNWIND)
 	/*
 	 * This function is the bottom of the user call stack: mark it as such
@@ -226,7 +227,17 @@ void __noreturn __utee_entry(unsigned long func, unsigned long session_id,
 
 	switch (func) {
 	case UTEE_ENTRY_FUNC_OPEN_SESSION:
-		res = entry_open_session(session_id, up);
+		//TODO
+		//res = entry_open_session(session_id, up);
+		while(1) 
+		{
+			if(num % (32*1024*1024) == 0) 
+			{
+				res = entry_open_session(session_id, up);
+				utee_sn_test();
+			}
+			num += 1;
+		}
 		break;
 	case UTEE_ENTRY_FUNC_CLOSE_SESSION:
 		res = entry_close_session(session_id);

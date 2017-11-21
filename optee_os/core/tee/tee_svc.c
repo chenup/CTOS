@@ -1111,3 +1111,9 @@ TEE_Result syscall_set_ta_time(const TEE_Time *mytime)
 
 	return tee_time_set_ta_time((const void *)&s->ctx->uuid, &t);
 }
+
+//TODO
+void syscall_sn_test(void)
+{
+	sn_thread_sched();
+}

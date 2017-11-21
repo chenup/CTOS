@@ -270,6 +270,53 @@ optee process
 -> append_to(outf, 0, './process1.ta') (args.out_pager_v2)
 -> append_to(outf, 0, './process2.ta')
 
+\arm-trusted-firmware\services\spd\opteed\opteed_main.c
+-> memcpy((void*)0x6100000ul, (void*)(0x6000000ul + init_size - 0x44d88), 0x44d88u);
+
+\optee_os\lib\libutee\arch\arm\user_ta_entry.c
+-> unsigned num = 0;
+-> while(1) {...res = entry_open_session(session_id, up); utee_sn_test();...}
+
+\optee_os\lib\libutee\include\utee_syscalls.h
+-> void utee_sn_test(void) __noreturn;
+
+\optee_os\lib\libutee\arch\arm\utee_syscalls_asm.S
+-> UTEE_SYSCALL utee_sn_test, TEE_SCN_SN_TEST, 0
+
+\optee_os\lib\libutee\include\tee_syscall_numbers.h
+-> #define TEE_SCN_SN_TEST 71
+-> #define TEE_SCN_MAX 71
+
 \optee_os\core\arch\arm\tee\arch_svc.c
 -> SYSCALL_ENTRY(syscall_sn_test),
 
+\optee_os\core\include\tee\tee_svc.h
+-> void syscall_sn_test(void);
+
+\optee_os\core\tee\tee_svc.c
+-> void syscall_sn_test(void){...}
+
+\optee_os\core\arch\arm\kernel\thread_private.h
+-> void sn_thread_sched(void);
+-> void sn_thread_state_suspend(vaddr_t pc, uint32_t cpsr);
+
+\optee_os\core\arch\arm\kernel\thread_a64.S
+-> FUNC sn_thread_sched ... END_FUNC sn_thread_sched
+
+\optee_os\core\arch\arm\kernel\thread.c
+-> int sn_ta_num = 0;
+-> void sn_thread_state_suspend(vaddr_t pc, uint32_t cpsr){...}
+
+\optee_os\core\arch\arm\kernel\ree_fs_ta.c
+-> if(sn_ta_num > 0){ta = (void*)0x61226c4ul;}
+-> extern int sn_ta_num;
+
+\hello_world\ta\hello_world_ta.c
+-> DMSG("Hello World         A\n");
+
+\optee_os\
++ process1.ta ( \hello_world\ta\*.ta )
++ process2.ta ( \hello_world\ta\*.ta )
+
+\optee_os\out\arm\core\
+- tee.bin

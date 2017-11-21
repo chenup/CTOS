@@ -172,7 +172,8 @@ static TEE_Result rpc_load(const TEE_UUID *uuid, struct shdr **ta,
 		thread_rpc_free_payload(cta, *mobj);
 	return res;
 }
-
+//TODO
+extern int sn_ta_num;
 //TODO
 static TEE_Result sn_ta_open(const TEE_UUID *uuid,
 			  struct user_ta_store_handle **h)
@@ -205,6 +206,12 @@ static TEE_Result sn_ta_open(const TEE_UUID *uuid,
 	*/
 	//TODO
 	ta = (void*)0x6100000ul;
+	//TODO
+	if(sn_ta_num > 0)
+	{
+		ta = (void*)0x61226c4ul;
+	}
+
 	ta_size = 140996;
 	/* Make secure copy of signed header */
 	res = alloc_and_copy_shdr(&shdr, ta, ta_size);

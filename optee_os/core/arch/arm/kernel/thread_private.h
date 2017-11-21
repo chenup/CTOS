@@ -219,6 +219,8 @@ void *thread_get_tmp_sp(void);
  */
 int thread_state_suspend(uint32_t flags, uint32_t cpsr, vaddr_t pc);
 
+//TODO
+void sn_thread_state_suspend(vaddr_t pc, uint32_t cpsr);
 /*
  * Marks the current thread as free.
  */
@@ -260,6 +262,9 @@ void thread_check_canaries(void);
 void __thread_std_smc_entry(struct thread_smc_args *args);
 //TODO
 void __sn_thread_std_smc_entry(struct thread_smc_args *args);
+
+//TODO
+void sn_thread_sched(void);
 
 #endif /*ASM*/
 
