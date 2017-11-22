@@ -215,6 +215,7 @@ static TEE_Result get_open_session_meta(size_t num_params,
 	return TEE_SUCCESS;
 }
 
+
 //TODO
 static void sn_entry_open_session(struct thread_smc_args *smc_args)
 {
@@ -223,7 +224,7 @@ static void sn_entry_open_session(struct thread_smc_args *smc_args)
 	struct tee_ta_session *s = NULL;
 	TEE_Identity clnt_id;
 	TEE_UUID uuid;
-	struct tee_ta_param param;
+	static struct tee_ta_param param;
 
 	res = sn_tee_ta_open_session(&err_orig, &s, &tee_open_sessions, &uuid,
 				  &clnt_id, TEE_TIMEOUT_INFINITE, &param);
