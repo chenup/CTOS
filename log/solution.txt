@@ -294,6 +294,7 @@ optee process
 -> void syscall_sn_test(void);
 
 \optee_os\core\tee\tee_svc.c
+-> void sn_thread_sched(void);
 -> void syscall_sn_test(void){...}
 
 \optee_os\core\arch\arm\kernel\thread_private.h

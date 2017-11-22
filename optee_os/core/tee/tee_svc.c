@@ -44,6 +44,8 @@
 #include <kernel/pseudo_ta.h>
 #include <mm/mobj.h>
 
+//TODO
+void sn_thread_sched(void);
 vaddr_t tee_svc_uref_base;
 
 void syscall_log(const void *buf __maybe_unused, size_t len __maybe_unused)
