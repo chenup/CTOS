@@ -167,7 +167,13 @@ optee monotonic time
 -> static void mytimer(void);
 -> static void myfunction(unsigned long data);
 -> mytimer();
+-> uint32_t n;
 -> struct timer_list timer1;
+-> struct timer_list timer2;
+-> struct timer_list timer3;
+-> struct timer_list timer4;
+-> struct timer_list timer5;
+-> struct timer_list timer6;
 
 \optee_os\core\include\kernel\interrupt.h
 -> enum { TIMER_SOFTFIQ = 0, NR_SOFTIRQS };
