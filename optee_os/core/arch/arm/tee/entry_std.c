@@ -224,8 +224,8 @@ static void sn_entry_open_session(struct thread_smc_args *smc_args)
 	struct tee_ta_session *s = NULL;
 	TEE_Identity clnt_id;
 	TEE_UUID uuid;
-	static struct tee_ta_param param;
-
+	struct tee_ta_param param;
+	param.types = 0;
 	res = sn_tee_ta_open_session(&err_orig, &s, &tee_open_sessions, &uuid,
 				  &clnt_id, TEE_TIMEOUT_INFINITE, &param);
 	if (res != TEE_SUCCESS)

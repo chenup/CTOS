@@ -103,7 +103,11 @@
 //TODO
 #define TEE_SCN_SN_TEST 71
 
-#define TEE_SCN_MAX 71
+//TODO
+#define TEE_SCN_SLEEP 72
+
+#define TEE_SCN_MAX 72
+//#define TEE_SCN_MAX 71
 //#define TEE_SCN_MAX				70
 
 /* Maximum number of allowed arguments for a syscall */

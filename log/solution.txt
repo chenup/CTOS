@@ -321,3 +321,39 @@ optee process
 
 \optee_os\out\arm\core\
 - tee.bin
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee sleep
+++++++++++++++++++++++++++++++++++++++++++++++++
+\optee_os\lib\libutee\arch\arm\user_ta_entry.c
+-> utee_sleep();
+
+\optee_os\lib\libutee\include\utee_syscalls.h
+-> void utee_sleep(void) __noreturn;
+
+\optee_os\lib\libutee\arch\arm\utee_syscalls_asm.S
+-> UTEE_SYSCALL utee_sleep, TEE_SCN_SLEEP, 0
+
+\optee_os\core\arch\arm\tee\arch_svc.c
+-> SYSCALL_ENTRY(syscall_sleep),
+
+\optee_os\core\include\tee\tee_svc.h
+-> void syscall_sleep(void);
+
+\optee_os\core\tee\tee_svc.c
+-> #include <rtos_timer.h>
+-> #include <rtos_wait.h>
+-> void syscall_sleep(void){...}
+
+\optee_os\core\kernel\
++ rtos_sched.c
+
+\optee_os\core\kernel\sub.mk
+-> srcs-y += rtos_sched.c
+
+\optee_os\core\include\
++ rtos_wait.h
+
+\optee_os\lib\libutee\include\tee_syscall_numbers.h
+-> #define TEE_SCN_SLEEP 72
+-> #define TEE_SCN_MAX 72

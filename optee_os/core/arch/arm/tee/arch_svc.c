@@ -136,6 +136,8 @@ static const struct syscall_entry tee_svc_syscall_table[] = {
 	SYSCALL_ENTRY(syscall_cache_operation),
 	//TODO
 	SYSCALL_ENTRY(syscall_sn_test),
+	//TODO
+	SYSCALL_ENTRY(syscall_sleep),
 };
 
 #ifdef TRACE_SYSCALLS

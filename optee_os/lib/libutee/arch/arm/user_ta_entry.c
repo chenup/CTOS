@@ -227,8 +227,21 @@ void __noreturn __utee_entry(unsigned long func, unsigned long session_id,
 
 	switch (func) {
 	case UTEE_ENTRY_FUNC_OPEN_SESSION:
+		
 		//TODO
-		//res = entry_open_session(session_id, up);
+		res = entry_open_session(session_id, up);
+
+		//TODO
+		utee_sleep();
+		while(1) 
+		{
+			if(num % (32*1024*1024) == 0) 
+			{
+				res = entry_open_session(session_id, up);
+			}
+			num += 1;
+		}
+		/*
 		while(1) 
 		{
 			if(num % (32*1024*1024) == 0) 
@@ -237,7 +250,7 @@ void __noreturn __utee_entry(unsigned long func, unsigned long session_id,
 				utee_sn_test();
 			}
 			num += 1;
-		}
+		}*/
 		break;
 	case UTEE_ENTRY_FUNC_CLOSE_SESSION:
 		res = entry_close_session(session_id);

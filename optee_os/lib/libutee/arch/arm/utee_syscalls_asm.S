@@ -190,3 +190,6 @@
 
         //TODO
         UTEE_SYSCALL utee_sn_test, TEE_SCN_SN_TEST, 0
+
+        //TODO
+        UTEE_SYSCALL utee_sleep, TEE_SCN_SLEEP, 0

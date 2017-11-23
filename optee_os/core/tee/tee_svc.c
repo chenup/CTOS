@@ -45,6 +45,9 @@
 #include <mm/mobj.h>
 
 //TODO
+#include <rtos_timer.h>
+#include <rtos_wait.h>
+//TODO
 void sn_thread_sched(void);
 vaddr_t tee_svc_uref_base;
 
@@ -1118,4 +1121,25 @@ TEE_Result syscall_set_ta_time(const TEE_Time *mytime)
 void syscall_sn_test(void)
 {
 	sn_thread_sched();
+}
+
+//TODO
+void syscall_sleep(void)
+{
+	unsigned long delay = 1000 * 5;
+	//unsigned int num = 0;
+	struct timer_list *timer = malloc(sizeof(struct timer_list));
+	setup_timer(timer, wakeup, 0, delay);
+	/*
+	while(1)
+	{
+		if(num % (10000) == 0)
+		{
+			DMSG("emmmmmm");
+		}
+		num++;
+	}
+	*/
+	pause();
+	//free(timer);
 }

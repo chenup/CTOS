@@ -184,11 +184,39 @@ static enum itr_return console_itr_cb(struct itr_handler *h __unused)
 }
 
 //TODO
+uint32_t n;
 struct timer_list timer1;
+struct timer_list timer2;
+struct timer_list timer3;
+struct timer_list timer4;
+struct timer_list timer5;
+struct timer_list timer6;
 static inline void mytimer(void)
 {	
-	unsigned long delay = 1000 * 5;
-	setup_timer(&timer1, myfunction, 0, delay);
+	unsigned long delay;
+    struct timer_list* timer;
+    if(n <= 5)
+    {
+            n++;
+            delay = n * 20;
+            switch(n)
+            {
+                    case 1: timer = &timer1;break;
+                    case 2: timer = &timer2;break;
+                    case 3: timer = &timer3;break;
+                    case 4: timer = &timer4;break;
+                    case 5: timer = &timer5;break;
+                    case 6: timer = &timer6;break;
+                    default: break;
+            }
+            setup_timer(timer, myfunction, 0, delay * 52);
+            DMSG("###add timer### %u s",(uint32_t)delay);
+    }
+    else
+    {
+             DMSG("###no timer###");
+    }
+
 }
 
 //TODO
@@ -353,6 +381,7 @@ static struct itr_handler timer_itr = {
 	.flags = ITRF_TRIGGER_LEVEL,
 	.handler = timer_itr_cb,
 };
+
 KEEP_PAGER(timer_itr);
 
 static TEE_Result init_secure_timer(void)
