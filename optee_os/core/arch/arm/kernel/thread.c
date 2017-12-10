@@ -90,6 +90,12 @@
 
 struct thread_ctx threads[CFG_NUM_THREADS];
 
+//TODO
+struct thread_ctx th_head = { 
+	.prev=&th_head,
+	.next=&th_head,
+};
+
 static struct thread_core_local thread_core_local[CFG_TEE_CORE_NB_CORE];
 
 #ifdef CFG_WITH_STACK_CANARIES
@@ -1539,4 +1545,53 @@ void sn_thread_state_suspend(vaddr_t pc, uint32_t cpsr)
 
 	thread_lazy_save_ns_vfp();
 	thread_resume(&threads[ct].regs);
+}
+
+//TODO
+void sn_sched(void);
+//TODO
+void sn_sched(void) {
+	struct thread_core_local *l = thread_get_core_local();
+	if(l->curr_thread != -1) {
+    	struct thread_ctx* tp = &threads[l->curr_thread];
+		thread_lazy_restore_ns_vfp();
+		lock_global();
+        tp->state = THREAD_STATE_SUSPENDED;
+		tp->have_user_map = core_mmu_user_mapping_is_active();
+		if(tp->have_user_map) {
+			core_mmu_get_user_map(&(tp->user_map));
+        	core_mmu_set_user_map(NULL);
+		}
+		l->curr_thread = -1;
+        tp->prev = th_head.prev;
+        tp->next = &th_head;
+        tp->prev->next = tp;
+        th_head.prev = tp;
+		unlock_global();
+        if(tp->prev == &th_head) {
+			DMSG("\nSNOW CLOCK RUN\n");
+			sn_ta_num = 1;
+            sn_thread_alloc_and_run();
+		}
+        else {
+			int i = 0;
+			DMSG("\nSNOW CLOCK SCHED\n");
+			lock_global();
+            tp = th_head.next;
+            tp->next->prev = &th_head;
+            th_head.next = tp->next;
+            tp->state = THREAD_STATE_ACTIVE;
+			unlock_global();
+			for(i = 0; i<8; i++) {
+				if(tp == &threads[i]) {
+					l->curr_thread = i;
+					break;
+				}
+			}
+			if(tp->have_user_map)
+				core_mmu_set_user_map(&(tp->user_map));
+			thread_lazy_save_ns_vfp();
+            thread_resume(&(tp->regs));
+        }
+    }
 }

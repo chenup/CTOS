@@ -216,6 +216,8 @@ void do_timer(unsigned long ticks)
 void update_process_times(void)
 {
 	run_local_timers();
+	//TODO
+	scheduler_tick();
 }
 
 /*

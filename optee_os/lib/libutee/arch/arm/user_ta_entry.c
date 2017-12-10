@@ -229,10 +229,10 @@ void __noreturn __utee_entry(unsigned long func, unsigned long session_id,
 	case UTEE_ENTRY_FUNC_OPEN_SESSION:
 		
 		//TODO
-		res = entry_open_session(session_id, up);
+		//res = entry_open_session(session_id, up);
 
 		//TODO
-		utee_sleep();
+		//utee_sleep();
 		while(1) 
 		{
 			if(num % (32*1024*1024) == 0) 

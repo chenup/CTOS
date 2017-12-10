@@ -116,6 +116,9 @@ struct thread_ctx {
 	struct mobj *rpc_mobj;
 	struct mutex_head mutexes;
 	struct thread_specific_data tsd;
+	//TODO
+	struct thread_ctx* prev;
+	struct thread_ctx* next;
 };
 
 #ifdef ARM64

@@ -749,11 +749,30 @@ LOCAL_FUNC el0_sync_abort , :
 	eret
 END_FUNC el0_sync_abort
 
+//TODO
 /* The handler of foreign interrupt. */
 .macro foreign_intr_handler mode:req
 	/*
 	 * Update core local flags
 	 */
+
+	// TODO
+new_func:
+	.ifc	\mode\(),fiq
+	ldr x0, [sp, #THREAD_CORE_LOCAL_CURR_THREAD]	
+	cmp x0, #-1
+	b.eq old_func
+	get_thread_ctx sp, 0, 1, 2
+	mrs x1, sp_el0
+	mrs x2, elr_el1
+	stp x1, x2, [x0, #THREAD_CTX_REGS_SP]
+	mrs x1, spsr_el1
+	str x1, [x0, #THREAD_CTX_REGS_CPSR]
+	store_xregs x0, THREAD_CTX_REGS_X4, 4, 30
+	load_xregs sp, THREAD_CORE_LOCAL_X0, 4, 7 
+	store_xregs x0, THREAD_CTX_REGS_X0, 4, 7
+	.endif
+old_func:
 	ldr	w1, [sp, #THREAD_CORE_LOCAL_FLAGS]
 	lsl	w1, w1, #THREAD_CLF_SAVED_SHIFT
 	orr	w1, w1, #THREAD_CLF_TMP
@@ -836,6 +855,24 @@ END_FUNC el0_sync_abort
 	/*
 	 * Update core local flags
 	 */
+
+	//TODO
+new_func:
+	.ifc	\mode\(),fiq
+	ldr x0, [sp, #THREAD_CORE_LOCAL_CURR_THREAD]	
+	cmp x0, #-1
+	b.eq old_func
+	get_thread_ctx sp, 0, 1, 2
+	mrs x1, sp_el0
+	mrs x2, elr_el1
+	stp x1, x2, [x0, #THREAD_CTX_REGS_SP]
+	mrs x1, spsr_el1
+	str x1, [x0, #THREAD_CTX_REGS_CPSR]
+	store_xregs x0, THREAD_CTX_REGS_X4, 4, 30
+	load_xregs sp, THREAD_CORE_LOCAL_X0, 4, 7 
+	store_xregs x0, THREAD_CTX_REGS_X0, 4, 7
+	.endif
+old_func:
 	ldr	w1, [sp, #THREAD_CORE_LOCAL_FLAGS]
 	lsl	w1, w1, #THREAD_CLF_SAVED_SHIFT
 	.ifc	\mode\(),fiq

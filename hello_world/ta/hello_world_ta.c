@@ -81,6 +81,7 @@ TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
 	 * The DMSG() macro is non-standard, TEE Internal API doesn't
 	 * specify any means to logging from a TA.
 	 */
+	/*
 	while(param_types != 2) {
 		if(num % (16*1024*1024) == 0)
 		{
@@ -93,8 +94,9 @@ TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
 		}
 		num += 1;
 	}
+	*/
 	//TODO
-	//DMSG("Hello World         A\n");
+	DMSG("Hello World         A\n");
 	/* If return value != TEE_SUCCESS the session will not be created. */
 	return TEE_SUCCESS;
 }
