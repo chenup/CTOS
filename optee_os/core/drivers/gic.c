@@ -431,10 +431,10 @@ void gic_it_handle(struct gic_data *gd)
 	{
 		
 		//DMSG("###DEBUG###: interrupt %" PRIu32, id);
-		//itr_handle(id);
+		itr_handle(id);
 		//TODO
 		DMSG("###DEBUG###: this is a interrupt");
-		irq_handle(id);
+		//irq_handle(id);
 	}
 	else
 		DMSG("ignoring interrupt %" PRIu32, id);

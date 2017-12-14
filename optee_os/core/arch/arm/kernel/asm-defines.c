@@ -80,6 +80,8 @@ DEFINES
 
 	/* struct thread_ctx_regs */
 	DEFINE(THREAD_CTX_REGS_SP, offsetof(struct thread_ctx_regs, sp));
+	//TODO
+	DEFINE(THREAD_CTX_REGS_CPSR, offsetof(struct thread_ctx_regs, cpsr));
 	DEFINE(THREAD_CTX_REGS_X0, offsetof(struct thread_ctx_regs, x[0]));
 	DEFINE(THREAD_CTX_REGS_X1, offsetof(struct thread_ctx_regs, x[1]));
 	DEFINE(THREAD_CTX_REGS_X4, offsetof(struct thread_ctx_regs, x[4]));

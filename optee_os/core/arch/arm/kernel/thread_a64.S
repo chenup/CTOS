@@ -757,11 +757,11 @@ END_FUNC el0_sync_abort
 	 */
 
 	// TODO
-new_func:
+foreign_new_func:
 	.ifc	\mode\(),fiq
 	ldr x0, [sp, #THREAD_CORE_LOCAL_CURR_THREAD]	
 	cmp x0, #-1
-	b.eq old_func
+	b.eq foreign_old_func
 	get_thread_ctx sp, 0, 1, 2
 	mrs x1, sp_el0
 	mrs x2, elr_el1
@@ -772,7 +772,7 @@ new_func:
 	load_xregs sp, THREAD_CORE_LOCAL_X0, 4, 7 
 	store_xregs x0, THREAD_CTX_REGS_X0, 4, 7
 	.endif
-old_func:
+foreign_old_func:
 	ldr	w1, [sp, #THREAD_CORE_LOCAL_FLAGS]
 	lsl	w1, w1, #THREAD_CLF_SAVED_SHIFT
 	orr	w1, w1, #THREAD_CLF_TMP
@@ -857,11 +857,11 @@ old_func:
 	 */
 
 	//TODO
-new_func:
+native_new_func:
 	.ifc	\mode\(),fiq
 	ldr x0, [sp, #THREAD_CORE_LOCAL_CURR_THREAD]	
 	cmp x0, #-1
-	b.eq old_func
+	b.eq native_old_func
 	get_thread_ctx sp, 0, 1, 2
 	mrs x1, sp_el0
 	mrs x2, elr_el1
@@ -872,7 +872,7 @@ new_func:
 	load_xregs sp, THREAD_CORE_LOCAL_X0, 4, 7 
 	store_xregs x0, THREAD_CTX_REGS_X0, 4, 7
 	.endif
-old_func:
+native_old_func:
 	ldr	w1, [sp, #THREAD_CORE_LOCAL_FLAGS]
 	lsl	w1, w1, #THREAD_CLF_SAVED_SHIFT
 	.ifc	\mode\(),fiq

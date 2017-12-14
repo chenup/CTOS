@@ -375,21 +375,23 @@ optee schedule
 \optee_os\core\arch\arm\kernel\thread.c
 -> void sn_sched(void);
 -> void sn_sched(void){...}
+-> struct thread_ctx th_head = { ... };
 
 \optee_os\core\arch\arm\kernel\thread_a64.S
--> new_func ... old_func (.macro native_intr_handler mode:req)
--> new_func ... old_func (.macro foreign_intr_handler mode:req)
+-> native_new_func ... native_old_func (.macro native_intr_handler mode:req)
+-> foreign_new_func ... old_func (.macro foreign_intr_handler mode:req)
 
 \optee_os\core\arch\arm\kernel\thread_private.h
 -> struct thread_ctx* prev; (struct thread_ctx)
 -> struct thread_ctx* next;
 
-\optee_os\core\arch\arm\kernel\thread.c
--> struct thread_ctx th_head = { ... };
+\optee_os\core\arch\arm\kernel\asm-defines.c
+-> DEFINE(THREAD_CTX_REGS_CPSR, offsetof(struct thread_ctx_regs, cpsr));
 
 \optee_os\lib\libutee\arch\arm\user_ta_entry.c
 -> ...
 
 \hello_world\ta\hello_world_ta.c
 -> ...
+
 ######phase 2######
