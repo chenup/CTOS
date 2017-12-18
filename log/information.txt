@@ -616,6 +616,95 @@ thread_core_local[pos].curr_thread = -1
 ------------------------------------------------
 smc #0
 
+++++++++++++++++++++++++++++++++++++++++++++++++
+OPTEE Interrupt
+++++++++++++++++++++++++++++++++++++++++++++++++
+[el0_fiq_a64] (\optee_os\core\arch\arm\kernel\thread_a64.S)
+
+sp: ?
+x[0]~x[3] -> thread_core_local.x[4](stack sp)
+b elx_fiq
+
+[elx_fiq] (native_intr_handler fiq) (\optee_os\core\arch\arm\kernel\thread_a64.S)
+
+native_old_func:
+thread_core_local.flags(stack sp) -> w1
+w1 << 4(CLF_SAVED_SHIFT) -> w1
+w1 | (1 << 3)(CLF_FIQ) -> w1
+w1 | (1 << 0)(CLF_TMP) -> w1
+w1 -> thread_core_local.flags(stack sp)
+
+/* load tmp_stack_va_end */
+thread_core_local.tmp_stack_va_end(stack sp) -> x1
+sp_el0 -> x2
+
+#0 -> spsel 
+sp: sp_el0
+
+x1 -> sp (sp_el0: tmp_stack_va_end)
+
+/*
+ * Save registers on stack that can be corrupted by a call to
+ * a C function
+ */
+
+/* Make room for struct elx_nintr_rec */
+/*
+ * This struct is never used from C it's only here to visualize the
+ * layout.
+ *
+ * struct elx_nintr_rec {
+ * 	uint64_t x[19 - 4]; x4..x18
+ * 	uint64_t lr;
+ * 	uint64_t sp_el0;
+ * };
+ */
+
+sp - #ELX_NINTR_REC_SIZE -> sp
+
+/* Store x4..x18 */
+x[4]~x[18] -> elx_nintr_rec.x[15] (stack sp)
+
+/* Store lr and original sp_el0 */
+x30 -> elx_nintr_rec.lr (stack sp)
+x2 -> elx_nintr_rec.sp_el0 (stack sp)
+
+bl	thread_check_canaries (stack_tmp)
+blr main_fiq (xl6 used)
+
+/*
+ * Restore registers
+ */
+ /* Restore x4..x18 */
+elx_nintr_rec.x[15] (stack sp) -> x[4]~x[18] 
+
+/* Load  lr and original sp_el0 */
+elx_nintr_rec.lr (stack sp) -> x30
+elx_nintr_rec.sp_el0 (stack sp) -> x2
+
+/* Restore SP_El0 */
+x2 -> sp(sp_el0)
+
+/* Switch back to SP_EL1 */
+#1 -> spsel
+sp: sp_el1
+
+/* Update core local flags */
+thread_core_local.flags(stack sp) -> w0
+w0 >> 4(CLF_SAVED_SHIFT) -> w0
+w0 -> thread_core_local.flags(stack sp)
+
+/* Restore x0..x3 */
+thread_core_local.x[4](stack sp) -> x[0]~x[3]
+
+/* Return from exception */
+eret
+
+
+
+
+
+
 
 
 
