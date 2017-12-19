@@ -159,11 +159,15 @@ void generic_s_timer_start()
 
 //TODO
 void sn_sched(void);
+//TODO
+void process_sched(void);
 static void main_fiq(void)
 {
 	gic_it_handle(&gic_data);
 	//TODO
-	sn_sched();
+	//sn_sched();
+	//TODO
+	process_sched();
 }
 
 void console_init(void)

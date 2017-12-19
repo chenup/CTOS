@@ -403,4 +403,12 @@ optee schedule
 -> process_native_intr_handler	fiq
 -> process_native_intr_handler	irq
 
--> 
+\optee_os\core\arch\arm\kernel\thread.c
+-> static void alloc_ready_process(void);
+-> static void alloc_ready_process(void) {...}
+-> void process_sched(void);
+-> void process_sched(void) {...}
+
+\optee_os\core\arch\arm\plat-vexpress\main.c
+-> void process_sched(void);
+-> process_sched();

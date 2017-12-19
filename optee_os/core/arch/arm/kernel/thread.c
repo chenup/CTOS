@@ -158,6 +158,8 @@ thread_pm_handler_t thread_system_reset_handler_ptr;
 
 static unsigned int thread_global_lock = SPINLOCK_UNLOCK;
 static bool thread_prealloc_rpc_cache;
+//TODO
+static void alloc_ready_process(void);
 
 static void init_canaries(void)
 {
@@ -497,6 +499,65 @@ static void sn_thread_alloc_and_run(void)
 
 	thread_lazy_save_ns_vfp();
 	thread_resume(&threads[n].regs);
+}
+
+//TODO
+static void alloc_ready_process(void)
+{
+	size_t n;
+	struct thread_core_local *l = thread_get_core_local();
+	bool found_thread = false;
+	struct thread_ctx* thread;
+
+	assert(l->curr_thread == -1);
+
+	lock_global();
+
+	for (n = 0; n < CFG_NUM_THREADS; n++) {
+		if (threads[n].state == THREAD_STATE_FREE) {
+			threads[n].state = THREAD_STATE_ACTIVE;
+			found_thread = true;
+			break;
+		}
+	}
+
+	unlock_global();
+
+	if (!found_thread) {
+		DMSG("\nprocess alloc error!\n");
+		return;
+	}
+
+	l->curr_thread = n;
+	threads[n].flags = 0;
+	thread = &threads[n];
+	thread->regs.pc = (uint64_t)sn_thread_std_smc_entry;
+
+	/*
+	 * Stdcalls starts in SVC mode with masked foreign interrupts, masked
+	 * Asynchronous abort and unmasked native interrupts.
+	 */
+	thread->regs.cpsr = SPSR_64(SPSR_64_MODE_EL1, SPSR_64_MODE_SP_EL0,
+				THREAD_EXCP_FOREIGN_INTR | DAIFBIT_ABT);
+	/* Reinitialize stack pointer */
+	thread->regs.sp = thread->stack_va_end;
+
+	/*
+	 * Copy arguments into context. This will make the
+	 * arguments appear in x0-x7 when thread is started.
+	 */
+	thread->regs.x[0] = 0;
+	thread->regs.x[1] = 0;
+	thread->regs.x[2] = 0;
+	thread->regs.x[3] = 0;
+	thread->regs.x[4] = 0; 
+	thread->regs.x[5] = 0;
+	thread->regs.x[6] = 0;
+	thread->regs.x[7] = 0;
+
+	/* Set up frame pointer as per the Aarch64 AAPCS */
+	thread->regs.x[29] = 0;
+
 }
 
 //TODO
@@ -1591,7 +1652,56 @@ void sn_sched(void) {
 			if(tp->have_user_map)
 				core_mmu_set_user_map(&(tp->user_map));
 			thread_lazy_save_ns_vfp();
-            thread_resume(&(tp->regs));
+            //thread_resume(&(tp->regs));
         }
     }
 }
+
+//TODO
+void process_sched(void);
+//TODO
+void process_sched(void) {
+	struct thread_core_local *l = thread_get_core_local();
+	if(l->curr_thread != -1) {
+    	struct thread_ctx* tp = &threads[l->curr_thread];
+		thread_lazy_restore_ns_vfp();
+		lock_global();
+        tp->state = THREAD_STATE_SUSPENDED;
+		tp->have_user_map = core_mmu_user_mapping_is_active();
+		if(tp->have_user_map) {
+			core_mmu_get_user_map(&(tp->user_map));
+        	core_mmu_set_user_map(NULL);
+		}
+		l->curr_thread = -1;
+        tp->prev = th_head.prev;
+        tp->next = &th_head;
+        tp->prev->next = tp;
+        th_head.prev = tp;
+		unlock_global();
+        if(tp->prev == &th_head) {
+			DMSG("\nalloc new ready process\n");
+			sn_ta_num = 1;
+            alloc_ready_process();
+		}
+        else {
+			int i = 0;
+			DMSG("\nschedule ready process\n");
+			lock_global();
+            tp = th_head.next;
+            tp->next->prev = &th_head;
+            th_head.next = tp->next;
+            tp->state = THREAD_STATE_ACTIVE;
+			unlock_global();
+			for(i = 0; i<8; i++) {
+				if(tp == &threads[i]) {
+					l->curr_thread = i;
+					break;
+				}
+			}
+			if(tp->have_user_map)
+				core_mmu_set_user_map(&(tp->user_map));
+			thread_lazy_save_ns_vfp();
+        }
+    }
+}
+
