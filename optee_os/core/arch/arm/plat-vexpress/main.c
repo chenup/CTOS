@@ -55,6 +55,8 @@
 #include <rtos_time.h>
 //TODO
 #include <rtos_timer.h>
+//TODO
+#include <rtos_hardfiq.h>
 
 static void main_fiq(void);
 //TODO
@@ -158,16 +160,18 @@ void generic_s_timer_start()
 }
 
 //TODO
-void sn_sched(void);
-//TODO
-void process_sched(void);
+//void sn_sched(void);
+
 static void main_fiq(void)
 {
+	//TODO
+	fiq_enter();
 	gic_it_handle(&gic_data);
 	//TODO
-	//sn_sched();
+	fiq_exit();
 	//TODO
-	process_sched();
+	//sn_sched();
+
 }
 
 void console_init(void)

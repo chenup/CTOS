@@ -192,7 +192,7 @@ optee monotonic time
 -> #include <rtos_timer.h>
 -> init_timers();
 
-\optee_os\core\drivers\gic.c
+\optee_os\core\arch\arm\plat-vexpress\main.c
 -> #include <rtos_hardfiq.h>
 -> fiq_enter();
 -> fiq_exit();
@@ -409,6 +409,13 @@ optee schedule
 -> void process_sched(void);
 -> void process_sched(void) {...}
 
-\optee_os\core\arch\arm\plat-vexpress\main.c
--> void process_sched(void);
--> process_sched();
+\optee_os\core\kernel\rtos_timer.c
+-> #include <rtos_sched.h>
+-> scheduler_tick();
+
+\optee_os\core\kernel\rtos_sched.c
+-> #include <rtos_sched.h>
+-> void scheduler_tick(void) {...}
+
+\optee_os\core\include\
++ rtos_sched.h

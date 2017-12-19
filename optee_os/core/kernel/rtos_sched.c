@@ -1,6 +1,8 @@
 #include <rtos_wait.h>
 #include <compiler.h>
 #include <trace.h>
+//TODO
+#include <rtos_sched.h>
 
 void sn_thread_sched(void);
 
@@ -18,4 +20,10 @@ void __wake_up(void)
 void pause(void)
 {
 	sn_thread_sched();
+}
+
+//TODO
+void scheduler_tick(void)
+{
+	process_sched();
 }

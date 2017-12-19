@@ -6,6 +6,8 @@
 #include <rtos_poison.h>
 #include <kernel/interrupt.h>
 #include <kernel/misc.h>
+//TODO
+#include <rtos_sched.h>
 
 #define jiffies jiffies_64
 struct tvec {
