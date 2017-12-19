@@ -621,12 +621,38 @@ OPTEE Interrupt
 ++++++++++++++++++++++++++++++++++++++++++++++++
 [el0_fiq_a64] (\optee_os\core\arch\arm\kernel\thread_a64.S)
 
-sp: ?
+sp: sp_el1
 x[0]~x[3] -> thread_core_local.x[4](stack sp)
 b elx_fiq
-
+------------------------------------------------
 [elx_fiq] (native_intr_handler fiq) (\optee_os\core\arch\arm\kernel\thread_a64.S)
 
+native_new_func:
+thread_core_local.curr_thread(stack sp) -> x0
+if(x0 == -1) (no running thread)
+{
+	jmp native_old_func
+}
+else
+{
+	/* get_thread_ctx */
+	thread_core_local.curr_thread(stack sp) -> w1
+	&threads[0] -> x0
+	sizeof(struct thread_ctx) -> x2
+	&threads[curr_thread] -> x0
+	
+	sp_el0 -> x1
+	elr_el1 -> x2
+
+	x1 -> threads[curr_thread].sp
+	x2 -> threads[curr_thread].pc
+	spsr_el1 -> x1
+	x1 -> threads[curr_thread].cpsr	
+	x4 ~ x30 -> threads[curr_thread].x[4]~x[30]
+	thread_core_local.x[0]~x[3] -> x4 ~ x7
+	x4 ~ x7 -> threads[curr_thread].x[0]~x[3]
+}
+------------------------------------------------
 native_old_func:
 thread_core_local.flags(stack sp) -> w1
 w1 << 4(CLF_SAVED_SHIFT) -> w1
@@ -699,6 +725,8 @@ thread_core_local.x[4](stack sp) -> x[0]~x[3]
 
 /* Return from exception */
 eret
+------------------------------------------------
+
 
 
 

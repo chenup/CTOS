@@ -850,18 +850,20 @@ foreign_old_func:
 #define ELX_NINTR_REC_SP_EL0		(8 + ELX_NINTR_REC_LR)
 #define ELX_NINTR_REC_SIZE		(8 + ELX_NINTR_REC_SP_EL0)
 
-/* The handler of native interrupt. */
-.macro native_intr_handler mode:req
-	/*
-	 * Update core local flags
-	 */
+//TODO
+/* restore process context in interrupt. */
+.macro intr_restore_process_context
+	load_xregs x0, THREAD_CTX_REGS_SP, 1, 3
+	mov	sp, x1
+	msr	elr_el1, x2
+	msr	spsr_el1, x3
+	load_xregs x0, THREAD_CTX_REGS_X1, 1, 30
+	ldr	x0, [x0, THREAD_CTX_REGS_X0]
+.endm
 
-	//TODO
-native_new_func:
-	.ifc	\mode\(),fiq
-	ldr x0, [sp, #THREAD_CORE_LOCAL_CURR_THREAD]	
-	cmp x0, #-1
-	b.eq native_old_func
+//TODO
+/* save process context in interrupt. */
+.macro intr_save_process_context
 	get_thread_ctx sp, 0, 1, 2
 	mrs x1, sp_el0
 	mrs x2, elr_el1
@@ -871,8 +873,35 @@ native_new_func:
 	store_xregs x0, THREAD_CTX_REGS_X4, 4, 30
 	load_xregs sp, THREAD_CORE_LOCAL_X0, 4, 7 
 	store_xregs x0, THREAD_CTX_REGS_X0, 4, 7
+.endm
+
+//TODO
+/* The new handler of native interrupt. */
+.macro new_native_intr_handler mode:req
+	/*
+	 * Update core local flags
+	 */
+//TODO
+	.ifc	\mode\(),fiq
+	ldr x0, [sp, #THREAD_CORE_LOCAL_CURR_THREAD]	
+	cmp x0, #-1
+	b.eq normal_native_func
+	intr_save_process_context
+common_native_func:
+	native_intr_handler \mode\()
+	.ifc	\mode\(),fiq
+	ldr x0, [sp, #THREAD_CORE_LOCAL_CURR_THREAD]	
+	cmp x0, #-1
+	b.eq native_eret
+	intr_restore_process_context
+	/* Return from exception */
+native_eret:
+	eret
 	.endif
-native_old_func:
+
+//TODO
+/* The handler of native interrupt. */
+.macro native_intr_handler mode:req
 	ldr	w1, [sp, #THREAD_CORE_LOCAL_FLAGS]
 	lsl	w1, w1, #THREAD_CLF_SAVED_SHIFT
 	.ifc	\mode\(),fiq
@@ -926,14 +955,12 @@ native_old_func:
 
 	/* Restore x0..x3 */
 	load_xregs sp, THREAD_CORE_LOCAL_X0, 0, 3
-
-	/* Return from exception */
-	eret
 .endm
 
 LOCAL_FUNC elx_irq , :
 #if defined(CFG_ARM_GICV3)
-	native_intr_handler	irq
+//TODO
+	new_native_intr_handler	irq
 #else
 	foreign_intr_handler	irq
 #endif
@@ -943,6 +970,7 @@ LOCAL_FUNC elx_fiq , :
 #if defined(CFG_ARM_GICV3)
 	foreign_intr_handler	fiq
 #else
-	native_intr_handler	fiq
+//TODO
+	new_native_intr_handler	fiq
 #endif
 END_FUNC elx_fiq
