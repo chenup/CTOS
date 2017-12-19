@@ -51,6 +51,8 @@
 #include <trace.h>
 #include <util.h>
 //TODO
+#include <rtos_sched.h>
+//TODO
 #include <tee\entry_std.h>
 #include "thread_private.h"
 
@@ -1657,8 +1659,6 @@ void sn_sched(void) {
     }
 }
 
-//TODO
-void process_sched(void);
 //TODO
 void process_sched(void) {
 	struct thread_core_local *l = thread_get_core_local();

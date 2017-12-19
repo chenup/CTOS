@@ -404,9 +404,9 @@ optee schedule
 -> process_native_intr_handler	irq
 
 \optee_os\core\arch\arm\kernel\thread.c
+-> #include <rtos_sched.h>
 -> static void alloc_ready_process(void);
 -> static void alloc_ready_process(void) {...}
--> void process_sched(void);
 -> void process_sched(void) {...}
 
 \optee_os\core\kernel\rtos_timer.c
