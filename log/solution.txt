@@ -395,3 +395,12 @@ optee schedule
 -> ...
 
 ######phase 2######
+\optee_os\core\arch\arm\kernel\thread_a64.S
+-> .macro intr_restore_process_context {...} .endm
+-> .macro intr_save_process_context {...} .endm
+-> .macro new_native_intr_handler mode:req {...} .endm
+-> .macro native_intr_handler mode:req {...} .endm
+-> process_native_intr_handler	fiq
+-> process_native_intr_handler	irq
+
+-> 

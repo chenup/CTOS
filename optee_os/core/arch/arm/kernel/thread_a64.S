@@ -853,8 +853,9 @@ foreign_old_func:
 //TODO
 /* restore process context in interrupt. */
 .macro intr_restore_process_context
+	get_thread_ctx sp, 0, 1, 2
 	load_xregs x0, THREAD_CTX_REGS_SP, 1, 3
-	mov	sp, x1
+	msr	sp_el0, x1
 	msr	elr_el1, x2
 	msr	spsr_el1, x3
 	load_xregs x0, THREAD_CTX_REGS_X1, 1, 30
@@ -877,7 +878,7 @@ foreign_old_func:
 
 //TODO
 /* The new handler of native interrupt. */
-.macro new_native_intr_handler mode:req
+.macro process_native_intr_handler mode:req
 	/*
 	 * Update core local flags
 	 */
@@ -885,8 +886,9 @@ foreign_old_func:
 	.ifc	\mode\(),fiq
 	ldr x0, [sp, #THREAD_CORE_LOCAL_CURR_THREAD]	
 	cmp x0, #-1
-	b.eq normal_native_func
+	b.eq common_native_func
 	intr_save_process_context
+	.endif
 common_native_func:
 	native_intr_handler \mode\()
 	.ifc	\mode\(),fiq
@@ -894,10 +896,12 @@ common_native_func:
 	cmp x0, #-1
 	b.eq native_eret
 	intr_restore_process_context
+	.endif
 	/* Return from exception */
 native_eret:
 	eret
-	.endif
+.endm
+	
 
 //TODO
 /* The handler of native interrupt. */
@@ -955,12 +959,13 @@ native_eret:
 
 	/* Restore x0..x3 */
 	load_xregs sp, THREAD_CORE_LOCAL_X0, 0, 3
+	//eret
 .endm
 
 LOCAL_FUNC elx_irq , :
 #if defined(CFG_ARM_GICV3)
 //TODO
-	new_native_intr_handler	irq
+	process_native_intr_handler	irq
 #else
 	foreign_intr_handler	irq
 #endif
@@ -971,6 +976,7 @@ LOCAL_FUNC elx_fiq , :
 	foreign_intr_handler	fiq
 #else
 //TODO
-	new_native_intr_handler	fiq
+	//native_intr_handler	fiq
+	process_native_intr_handler	fiq
 #endif
 END_FUNC elx_fiq
