@@ -36,8 +36,61 @@ void mutex_init(struct mutex *m)
 	*m = (struct mutex)MUTEX_INITIALIZER;
 }
 
+//TODO
+static void __tee_mutex_lock(struct mutex *m)
+{
+	//assert_have_no_spinlock();
+	//assert(thread_get_id_may_fail() != -1);
+
+	while (true) {
+		uint32_t old_itr_status;
+		enum mutex_value old_value;
+		struct wait_queue_elem wqe;
+		int owner = MUTEX_OWNER_ID_NONE;
+
+		/*
+		 * If the mutex is locked we need to initialize the wqe
+		 * before releasing the spinlock to guarantee that we don't
+		 * miss the wakeup from mutex_unlock().
+		 *
+		 * If the mutex is unlocked we don't need to use the wqe at
+		 * all.
+		 */
+
+		old_itr_status = thread_mask_exceptions(THREAD_EXCP_ALL);
+		cpu_spin_lock(&m->spin_lock);
+
+		old_value = m->value;
+		if (old_value == MUTEX_VALUE_LOCKED) {
+			//TODO
+			wq_wait_init(&m->wq, &wqe);
+
+			//owner = m->owner_id;
+			//assert(owner != thread_get_id_may_fail());
+		} else {
+			m->value = MUTEX_VALUE_LOCKED;
+			thread_add_mutex(m);
+		}
+
+		cpu_spin_unlock(&m->spin_lock);
+		thread_unmask_exceptions(old_itr_status);
+
+		if (old_value == MUTEX_VALUE_LOCKED) {
+			/*
+			 * Someone else is holding the lock, wait in normal
+			 * world for the lock to become available.
+			 */
+			//wq_wait_final(&m->wq, &wqe, m, owner, fname, lineno);
+			//TODO
+			tee_wq_wait_final(&m->wq, &wqe, m);
+		} else
+			return;
+	}
+}
+
 static void __mutex_lock(struct mutex *m, const char *fname, int lineno)
 {
+
 	assert_have_no_spinlock();
 	assert(thread_get_id_may_fail() != -1);
 
@@ -83,6 +136,30 @@ static void __mutex_lock(struct mutex *m, const char *fname, int lineno)
 	}
 }
 
+//TODO
+static void __tee_mutex_unlock(struct mutex *m)
+{
+	//uint32_t old_itr_status;
+
+	//assert_have_no_spinlock();
+	//assert(thread_get_id_may_fail() != -1);
+	/*
+	old_itr_status = thread_mask_exceptions(THREAD_EXCP_ALL);
+	cpu_spin_lock(&m->spin_lock);
+	*/
+	if (m->value != MUTEX_VALUE_LOCKED)
+		panic();
+
+	thread_rem_mutex(m);
+	//m->value = MUTEX_VALUE_UNLOCKED;
+    /*
+	cpu_spin_unlock(&m->spin_lock);
+	thread_unmask_exceptions(old_itr_status);
+	*/
+	//wq_wake_one(&m->wq, m, fname, lineno);
+	tee_wq_wake_one(&m->wq);
+}
+
 static void __mutex_unlock(struct mutex *m, const char *fname, int lineno)
 {
 	uint32_t old_itr_status;
@@ -103,6 +180,30 @@ static void __mutex_unlock(struct mutex *m, const char *fname, int lineno)
 	thread_unmask_exceptions(old_itr_status);
 
 	wq_wake_one(&m->wq, m, fname, lineno);
+}
+
+//TODO
+static bool __tee_mutex_trylock(struct mutex *m)
+{
+	uint32_t old_itr_status;
+	enum mutex_value old_value;
+
+	//assert_have_no_spinlock();
+	//assert(thread_get_id_may_fail() != -1);
+
+	old_itr_status = thread_mask_exceptions(THREAD_EXCP_ALL);
+	cpu_spin_lock(&m->spin_lock);
+
+	old_value = m->value;
+	if (old_value == MUTEX_VALUE_UNLOCKED) {
+		m->value = MUTEX_VALUE_LOCKED;
+		thread_add_mutex(m);
+	}
+
+	cpu_spin_unlock(&m->spin_lock);
+	thread_unmask_exceptions(old_itr_status);
+
+	return old_value == MUTEX_VALUE_UNLOCKED;
 }
 
 static bool __mutex_trylock(struct mutex *m, const char *fname __unused,
@@ -145,9 +246,21 @@ bool mutex_trylock_debug(struct mutex *m, const char *fname, int lineno)
 	return __mutex_trylock(m, fname, lineno);
 }
 #else
+//TODO
+void tee_mutex_unlock(struct mutex *m)
+{
+	__tee_mutex_unlock(m);
+}
+
 void mutex_unlock(struct mutex *m)
 {
 	__mutex_unlock(m, NULL, -1);
+}
+
+//TODO
+void tee_mutex_lock(struct mutex *m)
+{
+	__tee_mutex_lock(m);
 }
 
 void mutex_lock(struct mutex *m)
@@ -158,6 +271,12 @@ void mutex_lock(struct mutex *m)
 bool mutex_trylock(struct mutex *m)
 {
 	return __mutex_trylock(m, NULL, -1);
+}
+
+//TODO
+bool tee_mutex_trylock(struct mutex *m)
+{
+	return __tee_mutex_trylock(m);
 }
 #endif
 

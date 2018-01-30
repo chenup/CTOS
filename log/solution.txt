@@ -419,3 +419,41 @@ optee schedule
 
 \optee_os\core\include\
 + rtos_sched.h
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee mutex
+++++++++++++++++++++++++++++++++++++++++++++++++
+\optee_os\core\arch\arm\include\kernel\mutex.h
+-> void tee_mutex_unlock(struct mutex *m);
+-> void tee_mutex_lock(struct mutex *m);
+-> bool tee_mutex_trylock(struct mutex *m);
+
+\optee_os\core\arch\arm\kernel\mutex.c
+-> void tee_mutex_unlock(struct mutex *m) {...}
+-> void tee_mutex_lock(struct mutex *m) {...}
+-> static void __tee_mutex_unlock(struct mutex *m) {...}
+-> static void __tee_mutex_lock(struct mutex *m) {...}
+-> bool tee_mutex_trylock(struct mutex *m) {...}
+-> static bool __tee_mutex_trylock(struct mutex *m) {...}
+
+\optee_os\core\arch\arm\include\kernel\wait_queue.h
+-> void tee_wq_wait_final(struct wait_queue *wq, struct wait_queue_elem *wqe, struct mutex *m);
+-> void tee_wq_wake_one(struct wait_queue *wq);
+
+\optee_os\core\arch\arm\kernel\wait_queue.c
+-> void tee_wq_wait_final(struct wait_queue *wq, struct wait_queue_elem *wqe, struct mutex *m) {...}
+-> void tee_wq_wake_one(struct wait_queue *wq) {...}
+
+\optee_os\core\include\rtos_sched.h
+-> extern void mutex_process_sleep(void);
+
+\optee_os\core\arch\arm\kernel\thread.c
+-> void mutex_process_sleep(void) {...}
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee porcess load
+++++++++++++++++++++++++++++++++++++++++++++++++
+######phase 1######
+
+
+

@@ -70,9 +70,15 @@ void wq_wait_final(struct wait_queue *wq, struct wait_queue_elem *wqe,
 		   const void *sync_obj, int owner, const char *fname,
 		   int lineno);
 
+//TODO
+void tee_wq_wait_final(struct wait_queue *wq, struct wait_queue_elem *wqe, struct mutex *m);
+
 /* Wakes up the first wait queue element in the wait queue, if there is one */
 void wq_wake_one(struct wait_queue *wq, const void *sync_obj,
 		const char *fname, int lineno);
+
+//TODO
+void tee_wq_wake_one(struct wait_queue *wq, struct mutex *m);
 
 /* Returns true if the wait queue doesn't contain any elements */
 bool wq_is_empty(struct wait_queue *wq);

@@ -559,7 +559,7 @@ static void alloc_ready_process(void)
 
 	/* Set up frame pointer as per the Aarch64 AAPCS */
 	thread->regs.x[29] = 0;
-
+	thread_lazy_save_ns_vfp();
 }
 
 //TODO
@@ -1704,4 +1704,10 @@ void process_sched(void) {
         }
     }
 }
+
+//TODO
+void mutex_process_sleep(void) {
+	sn_thread_sched();
+}
+
 

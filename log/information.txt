@@ -727,6 +727,21 @@ thread_core_local.x[4](stack sp) -> x[0]~x[3]
 eret
 ------------------------------------------------
 
+++++++++++++++++++++++++++++++++++++++++++++++++
+OPTEE Mutex
+++++++++++++++++++++++++++++++++++++++++++++++++
+struct mutex_head {								\
+	struct mutex *tqh_first;		/* first element */		\
+	struct mutex **tqh_last;	/* addr of last next element */	\
+}
+
+TAILQ_INSERT_TAIL(mutexes, m, link) do {			\
+	QUEUEDEBUG_TAILQ_INSERT_TAIL((mutexes), (m), link)		\
+	(m)->link.tqe_next = NULL;					\
+	(m)->link.tqe_prev = (mutexes)->tqh_last;			\
+	*(mutexes)->tqh_last = (m);					\
+	(mutexes)->tqh_last = &(m)->link.tqe_next;			\
+} while (/* CONSTCOND */0)
 
 
 

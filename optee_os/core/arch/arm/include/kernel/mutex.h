@@ -75,6 +75,11 @@ bool mutex_trylock_debug(struct mutex *m, const char *fname, int lineno);
 void mutex_unlock(struct mutex *m);
 void mutex_lock(struct mutex *m);
 bool mutex_trylock(struct mutex *m);
+
+//TODO
+void tee_mutex_unlock(struct mutex *m);
+void tee_mutex_lock(struct mutex *m);
+bool tee_mutex_trylock(struct mutex *m);
 #endif
 
 

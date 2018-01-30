@@ -101,6 +101,26 @@ void wq_wait_init_condvar(struct wait_queue *wq, struct wait_queue_elem *wqe,
 	cpu_spin_unlock_xrestore(&wq_spin_lock, old_itr_status);
 }
 
+//TODO
+void tee_wq_wait_final(struct wait_queue *wq, struct wait_queue_elem *wqe, struct mutex *m)
+{
+	uint32_t old_itr_status;
+	unsigned done;
+
+	do {
+		
+		mutex_process_sleep();
+		old_itr_status = cpu_spin_lock_xsave(&wq_spin_lock);
+		done = wqe->done;
+		if (done)
+		{
+			SLIST_REMOVE(wq, wqe, wait_queue_elem, link);
+			m->value = MUTEX_VALUE_UNLOCKED;
+		}
+		cpu_spin_unlock_xrestore(&wq_spin_lock, old_itr_status);
+	} while (!done);
+}
+
 void wq_wait_final(struct wait_queue *wq, struct wait_queue_elem *wqe,
 		   const void *sync_obj, int owner, const char *fname,
 		   int lineno)
@@ -120,6 +140,34 @@ void wq_wait_final(struct wait_queue *wq, struct wait_queue_elem *wqe,
 
 		cpu_spin_unlock_xrestore(&wq_spin_lock, old_itr_status);
 	} while (!done);
+}
+
+//TODO
+void tee_wq_wake_one(struct wait_queue *wq)
+{
+	uint32_t old_itr_status;
+	struct wait_queue_elem *wqe;
+	int handle = -1;
+	bool do_wakeup = false;
+
+	old_itr_status = cpu_spin_lock_xsave(&wq_spin_lock);
+
+	SLIST_FOREACH(wqe, wq, link) {
+		if (!wqe->cv) {
+			do_wakeup = !wqe->done;
+			wqe->done = true;
+			handle = wqe->handle;
+			break;
+		}
+	}
+
+	cpu_spin_unlock_xrestore(&wq_spin_lock, old_itr_status);
+	/*
+	if (do_wakeup)
+	{
+
+	}
+	*/
 }
 
 void wq_wake_one(struct wait_queue *wq, const void *sync_obj,
