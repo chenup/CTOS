@@ -216,7 +216,7 @@ void __noreturn __utee_entry(unsigned long func, unsigned long session_id,
 {
 	TEE_Result res;
 	//TODO
-	unsigned num = 0;
+	//unsigned num = 0;
 #if defined(ARM32) && defined(CFG_UNWIND)
 	/*
 	 * This function is the bottom of the user call stack: mark it as such
@@ -229,10 +229,13 @@ void __noreturn __utee_entry(unsigned long func, unsigned long session_id,
 	case UTEE_ENTRY_FUNC_OPEN_SESSION:
 		
 		//TODO
-		//res = entry_open_session(session_id, up);
+		res = entry_open_session(session_id, up);
 
 		//TODO
+		utee_sn_test();
+		//TODO
 		//utee_sleep();
+		/*
 		while(1) 
 		{
 			if(num % (32*1024*1024) == 0) 
@@ -241,6 +244,8 @@ void __noreturn __utee_entry(unsigned long func, unsigned long session_id,
 			}
 			num += 1;
 		}
+		*/
+
 		/*
 		while(1) 
 		{

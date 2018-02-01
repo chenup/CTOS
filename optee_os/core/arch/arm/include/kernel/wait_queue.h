@@ -29,7 +29,11 @@
 
 #include <types_ext.h>
 #include <sys/queue.h>
+//TODO
+#include <kernel/mutex.h>
 
+//TODO
+struct mutex;
 struct wait_queue_elem;
 SLIST_HEAD(wait_queue, wait_queue_elem);
 
@@ -78,7 +82,7 @@ void wq_wake_one(struct wait_queue *wq, const void *sync_obj,
 		const char *fname, int lineno);
 
 //TODO
-void tee_wq_wake_one(struct wait_queue *wq, struct mutex *m);
+void tee_wq_wake_one(struct wait_queue *wq);
 
 /* Returns true if the wait queue doesn't contain any elements */
 bool wq_is_empty(struct wait_queue *wq);

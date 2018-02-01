@@ -437,18 +437,44 @@ optee mutex
 -> static bool __tee_mutex_trylock(struct mutex *m) {...}
 
 \optee_os\core\arch\arm\include\kernel\wait_queue.h
+-> #include <kernel/mutex.h>
+-> struct mutex;
 -> void tee_wq_wait_final(struct wait_queue *wq, struct wait_queue_elem *wqe, struct mutex *m);
 -> void tee_wq_wake_one(struct wait_queue *wq);
 
 \optee_os\core\arch\arm\kernel\wait_queue.c
+-> #include <rtos_sched.h>
 -> void tee_wq_wait_final(struct wait_queue *wq, struct wait_queue_elem *wqe, struct mutex *m) {...}
 -> void tee_wq_wake_one(struct wait_queue *wq) {...}
 
 \optee_os\core\include\rtos_sched.h
 -> extern void mutex_process_sleep(void);
 
+\optee_os\core\arch\arm\include\kernel\thread.h
+-> void tee_thread_rem_mutex(struct mutex *m);
+
 \optee_os\core\arch\arm\kernel\thread.c
 -> void mutex_process_sleep(void) {...}
+-> void sn_thread_state_suspend(vaddr_t pc, uint32_t cpsr) {...}
+-> void tee_thread_rem_mutex(struct mutex *m) {...}
+
+\optee_os\core\kernel\rtos_timer.c
+-> void update_process_times(void) {...}
+
+\hello_world\ta\hello_world_ta.c
+-> ...
+
+\optee_os\lib\libutee\arch\arm\user_ta_entry.c
+-> utee_sn_test();
+-> ...
+
+\optee_os\core\include\tee\tee_svc.h
+-> void syscall_sn_test(void) __noreturn;
+
+\optee_os\core\tee\tee_svc.c
+-> #include <kernel/mutex.h>
+-> static struct mutex tee_m = MUTEX_INITIALIZER;
+-> void syscall_sn_test(void) {...}
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee porcess load

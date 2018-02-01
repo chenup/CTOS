@@ -46,7 +46,7 @@ static void __tee_mutex_lock(struct mutex *m)
 		uint32_t old_itr_status;
 		enum mutex_value old_value;
 		struct wait_queue_elem wqe;
-		int owner = MUTEX_OWNER_ID_NONE;
+		//int owner = MUTEX_OWNER_ID_NONE;
 
 		/*
 		 * If the mutex is locked we need to initialize the wqe
@@ -139,23 +139,23 @@ static void __mutex_lock(struct mutex *m, const char *fname, int lineno)
 //TODO
 static void __tee_mutex_unlock(struct mutex *m)
 {
-	//uint32_t old_itr_status;
+	uint32_t old_itr_status;
 
 	//assert_have_no_spinlock();
 	//assert(thread_get_id_may_fail() != -1);
-	/*
+	
 	old_itr_status = thread_mask_exceptions(THREAD_EXCP_ALL);
 	cpu_spin_lock(&m->spin_lock);
-	*/
+	
 	if (m->value != MUTEX_VALUE_LOCKED)
 		panic();
 
-	thread_rem_mutex(m);
+	tee_thread_rem_mutex(m);
 	//m->value = MUTEX_VALUE_UNLOCKED;
-    /*
+    
 	cpu_spin_unlock(&m->spin_lock);
 	thread_unmask_exceptions(old_itr_status);
-	*/
+	
 	//wq_wake_one(&m->wq, m, fname, lineno);
 	tee_wq_wake_one(&m->wq);
 }

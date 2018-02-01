@@ -219,7 +219,11 @@ void update_process_times(void)
 {
 	run_local_timers();
 	//TODO
-	scheduler_tick();
+	if(jiffies_64 % 16 == 0)
+	{
+		scheduler_tick();
+	}
+	
 }
 
 /*

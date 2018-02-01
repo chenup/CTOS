@@ -47,6 +47,7 @@
 //TODO
 #include <rtos_timer.h>
 #include <rtos_wait.h>
+#include <kernel/mutex.h>
 //TODO
 void sn_thread_sched(void);
 vaddr_t tee_svc_uref_base;
@@ -1118,9 +1119,42 @@ TEE_Result syscall_set_ta_time(const TEE_Time *mytime)
 }
 
 //TODO
+static struct mutex tee_m = MUTEX_INITIALIZER;
+
+//TODO
 void syscall_sn_test(void)
 {
-	sn_thread_sched();
+	//sn_thread_sched();
+	int num = 0;
+	DMSG("###DEBUG### mutex lock");
+	tee_mutex_lock(&tee_m);
+	DMSG("###DEBUG### enter critical region");
+	while(1)
+	{
+		if(num % 10000000 == 1)
+		{
+			DMSG("###DEBUG### I am in critical region!!!, num: %u", (uint32_t)num);
+
+		}
+		if(num / 10000000 == 30)
+		{
+			break;
+		}
+		num++;
+	}
+	DMSG("###DEBUG### mutex unlock");
+	tee_mutex_unlock(&tee_m);
+	DMSG("###DEBUG### go out critical region");
+	num = 0;
+	while(1)
+	{
+		if(num % 20000000 == 1)
+		{
+			DMSG("###DEBUG### I am outside!");
+
+		}
+		num++;
+	}
 }
 
 //TODO

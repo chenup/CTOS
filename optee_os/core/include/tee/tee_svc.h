@@ -62,7 +62,8 @@ void syscall_log(const void *buf, size_t len);
 void syscall_panic(unsigned long code);
 
 //TODO
-void syscall_sn_test(void);
+//void syscall_sn_test(void);
+void syscall_sn_test(void) __noreturn;
 
 //TODO
 void syscall_sleep(void);

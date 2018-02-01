@@ -1277,6 +1277,18 @@ void thread_rem_mutex(struct mutex *m)
 	TAILQ_REMOVE(&threads[ct].mutexes, m, link);
 }
 
+//TODO
+void tee_thread_rem_mutex(struct mutex *m)
+{
+	struct thread_core_local *l = thread_get_core_local();
+	int ct = l->curr_thread;
+
+	assert(ct != -1 && threads[ct].state == THREAD_STATE_ACTIVE);
+	assert(m->owner_id == ct);
+	m->owner_id = MUTEX_OWNER_ID_NONE;
+	TAILQ_REMOVE(&threads[ct].mutexes, m, link);
+}
+
 bool thread_disable_prealloc_rpc_cache(uint64_t *cookie)
 {
 	bool rv;
@@ -1554,10 +1566,9 @@ void sn_thread_state_suspend(vaddr_t pc, uint32_t cpsr)
 {
 	struct thread_core_local *l = thread_get_core_local();
 	int ct = l->curr_thread;
-	int i = 0;
-
+	struct thread_ctx* tp;
 	assert(ct != -1);
-
+	tp = &threads[ct];
 	thread_check_canaries();
 
 	thread_lazy_restore_ns_vfp();
@@ -1577,37 +1588,40 @@ void sn_thread_state_suspend(vaddr_t pc, uint32_t cpsr)
 	}
 
 	l->curr_thread = -1;
-
+	tp->prev = th_head.prev;
+    tp->next = &th_head;
+    tp->prev->next = tp;
+    th_head.prev = tp;
 	unlock_global();
-	ct++;
-	for(i=1; i<8; i++) {
-		if(threads[ct].state == THREAD_STATE_SUSPENDED)
-			break;	
-		ct++;
-		ct %= 8;
-	}
-	//DMSG("SNOW int %d:%d\n", i, ct);
-	if(i == 8) {
+	if(tp->prev == &th_head) 
+	{
+		DMSG("\nalloc new ready process\n");
 		sn_ta_num = 1;
-		sn_thread_alloc_and_run();
+        sn_thread_alloc_and_run();
 	}
-	assert(l->curr_thread == -1);
-
-	lock_global();
-
-	if (ct < CFG_NUM_THREADS &&
-	    threads[ct].state == THREAD_STATE_SUSPENDED)
-		threads[ct].state = THREAD_STATE_ACTIVE;
-
-	unlock_global();
-
-	l->curr_thread = ct;
-
-	if (threads[ct].have_user_map)
-		core_mmu_set_user_map(&threads[ct].user_map);
-
-	thread_lazy_save_ns_vfp();
-	thread_resume(&threads[ct].regs);
+	else
+	{
+		int i = 0;
+		DMSG("\nschedule ready process\n");
+		lock_global();
+        tp = th_head.next;
+        tp->next->prev = &th_head;
+        th_head.next = tp->next;
+        tp->state = THREAD_STATE_ACTIVE;
+		unlock_global();
+		for(i = 0; i<8; i++) {
+			if(tp == &threads[i]) {
+				l->curr_thread = i;
+				break;
+			}
+		}
+		if(tp->have_user_map)
+		{
+			core_mmu_set_user_map(&(tp->user_map));
+		}
+		thread_lazy_save_ns_vfp();
+		thread_resume(&(tp->regs));
+	}
 }
 
 //TODO
@@ -1652,7 +1666,9 @@ void sn_sched(void) {
 				}
 			}
 			if(tp->have_user_map)
+			{
 				core_mmu_set_user_map(&(tp->user_map));
+			}
 			thread_lazy_save_ns_vfp();
             //thread_resume(&(tp->regs));
         }
@@ -1699,7 +1715,9 @@ void process_sched(void) {
 				}
 			}
 			if(tp->have_user_map)
+			{
 				core_mmu_set_user_map(&(tp->user_map));
+			}
 			thread_lazy_save_ns_vfp();
         }
     }

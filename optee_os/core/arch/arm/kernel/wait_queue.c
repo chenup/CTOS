@@ -34,6 +34,9 @@
 #include <kernel/thread.h>
 #include <trace.h>
 
+//TODO
+#include <rtos_sched.h>
+
 static unsigned wq_spin_lock;
 
 
@@ -147,16 +150,16 @@ void tee_wq_wake_one(struct wait_queue *wq)
 {
 	uint32_t old_itr_status;
 	struct wait_queue_elem *wqe;
-	int handle = -1;
-	bool do_wakeup = false;
+	//int handle = -1;
+	//bool do_wakeup = false;
 
 	old_itr_status = cpu_spin_lock_xsave(&wq_spin_lock);
 
 	SLIST_FOREACH(wqe, wq, link) {
 		if (!wqe->cv) {
-			do_wakeup = !wqe->done;
+			//do_wakeup = !wqe->done;
 			wqe->done = true;
-			handle = wqe->handle;
+			//handle = wqe->handle;
 			break;
 		}
 	}
