@@ -52,6 +52,8 @@
 #include <trace.h>
 #include <utee_types.h>
 #include <util.h>
+//TODO 2018-2-3
+#include <kernel/proc.h>
 
 /* This mutex protects the critical section in tee_ta_init_session */
 struct mutex tee_ta_mutex = MUTEX_INITIALIZER;
@@ -507,6 +509,32 @@ static TEE_Result tee_ta_init_session_with_context(struct tee_ta_ctx *ctx,
 	ctx->ref_count++;
 	s->ctx = ctx;
 	return TEE_SUCCESS;
+}
+
+//TODO 2018-2-3
+TEE_Result tee_ta_exec(void* ta_addr, size_t pn)
+{
+	TEE_Result res;
+	struct proc *proc = &procs[pn];
+	struct list_head *lh;
+	struct list_head *lp;
+
+	assert(pn >= 0);
+    res = tee_ta_load(ta_addr, proc);
+
+	if (res != TEE_SUCCESS) {
+		DMSG("tee_ta_load failed 0x%x", res);
+		return res;
+	}
+
+	lh = &run_queues[proc->p_prio];
+	lp = &proc->link;
+	lp->prev = lh->prev;
+	lp->next = lh;
+	lp->prev->next = lp;
+	lh->prev = lp;
+	//res = sn_ta_enter(proc);
+	return res;
 }
 
 

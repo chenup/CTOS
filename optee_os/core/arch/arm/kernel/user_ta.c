@@ -55,6 +55,8 @@
 #include <types_ext.h>
 #include <utee_defines.h>
 #include <util.h>
+//TODO 2018-2-3
+#include <kernel/proc.h>
 
 #include "elf_load.h"
 #include "elf_common.h"
@@ -186,6 +188,71 @@ static struct mobj *alloc_ta_mem(size_t size)
 #endif
 }
 
+//TODO 2018-2-3
+static TEE_Result sn_load_elf(struct proc *proc, struct shdr *shdr)
+{
+	TEE_Result res;
+	struct elf_load_state *elf_state = NULL;
+	struct ta_head *ta_head;
+	size_t vasize;
+	struct run_info *run = &proc->run_info;
+
+	res = sn_elf_load_init(&elf_state, shdr);
+	if(res != TEE_SUCCESS)
+		goto out;
+
+	res = sn_elf_load_head(elf_state, sizeof(struct ta_head), (void*)&ta_head, &vasize);
+	if (res != TEE_SUCCESS)
+		goto out;
+
+	run->mobj_code = alloc_ta_mem(vasize);
+	if (!run->mobj_code) {
+		res = TEE_ERROR_OUT_OF_MEMORY;
+		goto out;
+	}
+
+	/* Temporary assignment to setup memory mapping */
+	//utc->ctx.flags = TA_FLAG_USER_MODE | TA_FLAG_EXEC_DDR;
+
+	/* Ensure proper aligment of stack */
+	run->mobj_stack = alloc_ta_mem(ROUNDUP(ta_head->stack_size,
+					       STACK_ALIGNMENT));
+	if (!run->mobj_stack) {
+		res = TEE_ERROR_OUT_OF_MEMORY;
+		goto out;
+	}
+
+	/*
+	 * Map physical memory into TA virtual memory
+	 */
+	res = sn_tee_mmu_init(run);
+	if (res != TEE_SUCCESS)
+		goto out;
+	
+	//here
+	res = sn_load_elf_segments(proc, elf_state, true /* init attrs */);
+	if (res != TEE_SUCCESS)
+		goto out;
+
+	sn_tee_mmu_set_ctx(proc);
+
+	res = sn_elf_load_body(elf_state, run->mmu->regions[1].va);
+	if (res != TEE_SUCCESS)
+		goto out;
+	ta_head = (struct ta_head*)run->mmu->regions[1].va;
+	run->entry = ta_head->entry.ptr64;
+	//DMSG("SNOW entry:%lx\n", ta_head->entry.ptr64);
+
+	/*
+	 * Replace the init attributes with attributes used when the TA is
+	 * running.
+	*/
+	res = sn_load_elf_segments(proc, elf_state, false);
+out:
+	sn_elf_load_final(elf_state);
+	return res;
+}
+
 static TEE_Result load_elf(struct user_ta_ctx *utc,
 			   const struct user_ta_store_ops *ta_store,
 			   struct user_ta_store_handle *ta_handle)
@@ -256,6 +323,44 @@ static TEE_Result load_elf(struct user_ta_ctx *utc,
 
 out:
 	elf_load_final(elf_state);
+	return res;
+}
+
+//TODO 2018-2-3
+TEE_Result tee_ta_load(struct shdr *signed_ta, struct proc *proc)
+{
+	TEE_Result res;
+	uaddr_t usr_stack;
+	struct run_info *run = &proc->run_info;
+
+	res = sn_load_elf(proc, signed_ta);
+	if (res != TEE_SUCCESS)
+		goto error_return;
+
+	sn_tee_mmu_set_ctx(proc);
+    proc->uregs->spsr = read_daif() & (SPSR_64_DAIF_MASK << SPSR_64_DAIF_SHIFT);
+	usr_stack = (uaddr_t)(run->mmu->regions[0].va) + run->mobj_stack->size;
+	proc->uregs->sp = usr_stack;
+	proc->uregs->pc = run->entry;
+	DMSG("ELF load address 0x%x", (uint32_t)run->mmu->regions[1].va);
+
+	//tee_mmu_set_ctx(NULL);
+
+	return TEE_SUCCESS;
+
+error_return:
+	//free(sec_shdr);
+/*
+	tee_mmu_set_ctx(NULL);
+	if (utc) {
+		pgt_flush_ctx(&utc->ctx);
+		tee_pager_rem_uta_areas(utc);
+		tee_mmu_final(utc);
+		mobj_free(utc->mobj_code);
+		mobj_free(utc->mobj_stack);
+		free(utc);
+	}
+*/
 	return res;
 }
 

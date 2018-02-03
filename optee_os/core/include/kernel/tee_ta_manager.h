@@ -149,6 +149,9 @@ TEE_Result sn_tee_ta_open_session(TEE_ErrorOrigin *err,
 			       uint32_t cancel_req_to,
 			       struct tee_ta_param *param);
 
+//TODO 2018-2-3
+TEE_Result tee_ta_exec(void* ta_addr, size_t pn);
+
 TEE_Result tee_ta_invoke_command(TEE_ErrorOrigin *err,
 				 struct tee_ta_session *sess,
 				 const TEE_Identity *clnt_id,

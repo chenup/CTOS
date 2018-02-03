@@ -48,6 +48,8 @@
 #include <types_ext.h>
 #include <user_ta_header.h>
 #include <util.h>
+//TODO 2018-2-4
+#include <kernel/proc.h>
 
 #ifdef CFG_PL310
 #include <kernel/tee_l2cc_mutex.h>
@@ -207,6 +209,19 @@ static TEE_Result tee_mmu_umap_set_vas(struct tee_mmu_info *mmu)
 		if ((va - va_range_base) >= va_range_size)
 			return TEE_ERROR_EXCESS_DATA;
 	}
+
+	return TEE_SUCCESS;
+}
+
+//TODO 2018-2-4
+TEE_Result sn_tee_mmu_init(struct run_info *run)
+{
+	run->mmu = calloc(1, sizeof(struct tee_mmu_info));
+	if(!run->mmu) {
+		return TEE_ERROR_OUT_OF_MEMORY;
+	}
+
+	core_mmu_get_user_va_range(&(run->mmu->ta_private_vmem_start), NULL);
 
 	return TEE_SUCCESS;
 }

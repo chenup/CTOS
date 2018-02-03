@@ -192,6 +192,32 @@ static TEE_Result alloc_and_copy_to(void **p, struct elf_load_state *state,
 	return res;
 }
 
+//TODO 2018-2-3
+TEE_Result sn_elf_load_init(struct elf_load_state **ret_state, struct shdr *shdr)
+{
+	struct elf_load_state *state;
+	//TEE_Result res;
+	//uint8_t *nwdata = (uint8_t *)shdr + SHDR_GET_SIZE(shdr);
+	//size_t nwdata_len = shdr->img_size;
+	state = calloc(1, sizeof(*state));
+	if (!state)
+		return TEE_ERROR_OUT_OF_MEMORY;
+	state->ta_handle->shdr = shdr;
+	//state->nwdata = nwdata;
+	//state->nwdata_len = nwdata_len;
+
+	//state->ta_handle = ta_handle;
+	//res = ta_store->get_size(ta_handle, &state->data_len);
+	/*
+	if (res != TEE_SUCCESS) {
+		free(state);
+		return res;
+	}
+	*/
+	*ret_state = state;
+	return TEE_SUCCESS;
+}
+
 TEE_Result elf_load_init(const struct user_ta_store_ops *ta_store,
 			 struct user_ta_store_handle *ta_handle,
 			 struct elf_load_state **ret_state)
@@ -239,6 +265,31 @@ static TEE_Result e32_load_ehdr(struct elf_load_state *state, Elf32_Ehdr *ehdr)
 }
 
 #ifdef ARM64
+
+//TODO 2018-2-3
+static TEE_Result sn_e64_load_ehdr(struct elf_load_state *state, Elf32_Ehdr *eh32)
+{
+	Elf64_Ehdr *ehdr = NULL;
+
+	if (eh32->e_ident[EI_VERSION] != EV_CURRENT ||
+	    eh32->e_ident[EI_CLASS] != ELFCLASS64 ||
+	    eh32->e_ident[EI_DATA] != ELFDATA2LSB ||
+	    eh32->e_ident[EI_OSABI] != ELFOSABI_NONE ||
+	    eh32->e_type != ET_DYN || eh32->e_machine != EM_AARCH64)
+		return TEE_ERROR_BAD_FORMAT;
+
+	ehdr = malloc(sizeof(*ehdr));
+	if (!ehdr)
+		return TEE_ERROR_OUT_OF_MEMORY;
+	memcpy(ehdr, eh32, sizeof(*ehdr));
+	if (ehdr->e_flags || ehdr->e_phentsize != sizeof(Elf64_Phdr) ||
+	    	ehdr->e_shentsize != sizeof(Elf64_Shdr))
+		return TEE_ERROR_BAD_FORMAT;
+	state->ehdr = ehdr;
+	state->is_32bit = false;
+	return TEE_SUCCESS;
+}
+
 static TEE_Result e64_load_ehdr(struct elf_load_state *state, Elf32_Ehdr *eh32)
 {
 	TEE_Result res;
@@ -276,6 +327,97 @@ static TEE_Result e64_load_ehdr(struct elf_load_state *state __unused,
 	return TEE_ERROR_NOT_SUPPORTED;
 }
 #endif /*ARM64*/
+
+//TODO 2018-2-3
+static TEE_Result sn_load_head(struct elf_load_state *state, size_t head_size)
+{
+	size_t n;
+	void *p;
+	struct elf_ehdr ehdr;
+	struct elf_phdr phdr;
+	struct elf_phdr ptload0;
+	size_t phsize;
+
+	struct shdr *shdr = state->ta_handle->shdr;
+	uint8_t *nwdata = (uint8_t *)shdr + SHDR_GET_SIZE(shdr);
+	
+	copy_ehdr(&ehdr, state);
+	/*
+	 * Program headers:
+	 * We're expecting at least one header of PT_LOAD type.
+	 * .ta_head must be located first in the first PT_LOAD header, which
+	 * must start at virtual address 0. Other types of headers may appear
+	 * before the first PT_LOAD (for example, GNU ld will typically insert
+	 * a PT_ARM_EXIDX segment first when it encounters a .ARM.exidx section
+	 * i.e., unwind tables for 32-bit binaries).
+	 * The last PT_LOAD header gives the maximum VA.
+	 * A PT_DYNAMIC segment may appear, but is ignored.
+	 * All sections not included by a PT_LOAD segment are ignored.
+	 */
+	if (ehdr.e_phnum < 1)
+		return TEE_ERROR_BAD_FORMAT;
+
+	if (MUL_OVERFLOW(ehdr.e_phnum, ehdr.e_phentsize, &phsize))
+		return TEE_ERROR_SECURITY;
+
+	//res = alloc_and_copy_to(&p, state, ehdr.e_phoff, phsize);
+	p = malloc(phsize);
+	if(!p)
+		return TEE_ERROR_OUT_OF_MEMORY;
+	memcpy(p, nwdata + ehdr.e_phoff, phsize);
+	state->phdr = p;
+
+	/*
+	 * Check that the first program header of type PT_LOAD starts at
+	 * virtual address 0.
+	 */
+	for (n = 0; n < ehdr.e_phnum; n++) {
+		copy_phdr(&ptload0, state, n);
+		if (ptload0.p_type == PT_LOAD)
+			break;
+	}
+	if (ptload0.p_type != PT_LOAD || ptload0.p_vaddr != 0)
+		return TEE_ERROR_BAD_FORMAT;
+
+	/*
+	 * Calculate amount of required virtual memory for TA. Find the max
+	 * address used by a PT_LOAD type. Note that last PT_LOAD type
+	 * dictates the total amount of needed memory. Eventual holes in
+	 * the memory will also be allocated.
+	 *
+	 * Note that this loop will terminate at n = 0 if not earlier
+	 * as we already know from above that we have at least one PT_LOAD
+	 */
+	n = ehdr.e_phnum;
+	do {
+		n--;
+		copy_phdr(&phdr, state, n);
+	} while (phdr.p_type != PT_LOAD);
+
+	if (ADD_OVERFLOW(phdr.p_vaddr, phdr.p_memsz, &state->vasize))
+		return TEE_ERROR_SECURITY;
+
+	/*
+	 * Read .ta_head from first segment, make sure the segment is large
+	 * enough. We're only interested in seeing that the
+	 * TA_FLAG_EXEC_DDR flag is set. If that's true we set that flag in
+	 * the TA context to enable mapping the TA. Later when this
+	 * function has returned and the hash has been verified the flags
+	 * field will be updated with eventual other flags.
+	 */
+	if (ptload0.p_filesz < head_size)
+		return TEE_ERROR_BAD_FORMAT;
+
+	p = malloc(head_size);
+	if(!p)
+		return TEE_ERROR_OUT_OF_MEMORY;
+
+	memcpy(p, nwdata + ptload0.p_offset, head_size);
+
+	state->ta_head = p;
+	state->ta_head_size = head_size;
+	return TEE_SUCCESS;
+}
 
 static TEE_Result load_head(struct elf_load_state *state, size_t head_size)
 {
@@ -359,6 +501,34 @@ static TEE_Result load_head(struct elf_load_state *state, size_t head_size)
 	return res;
 }
 
+//TODO 2018-2-3
+TEE_Result sn_elf_load_head(struct elf_load_state *state, size_t head_size,
+			void **head, size_t *vasize)
+{
+	TEE_Result res;
+	Elf32_Ehdr *ehdr;
+
+	struct shdr *shdr = state->ta_handle->shdr;
+	uint8_t *nwdata = (uint8_t *)shdr + SHDR_GET_SIZE(shdr);
+	//size_t nwdata_len = shdr->img_size;
+
+	ehdr = (void*)(state->nwdata);
+
+	if (!IS_ELF(*ehdr))
+		return TEE_ERROR_BAD_FORMAT;
+
+	res = sn_e64_load_ehdr(state, ehdr);
+	if (res != TEE_SUCCESS)
+		return res;
+
+	res = sn_load_head(state, head_size);
+	if (res == TEE_SUCCESS) {
+		*head = state->ta_head;
+		*vasize = state->vasize;
+	}
+	return res;
+}
+
 TEE_Result elf_load_head(struct elf_load_state *state, size_t head_size,
 			void **head, size_t *vasize, bool *is_32bit)
 {
@@ -379,6 +549,7 @@ TEE_Result elf_load_head(struct elf_load_state *state, size_t head_size,
 
 	if (!IS_ELF(ehdr))
 		return TEE_ERROR_BAD_FORMAT;
+
 	res = e32_load_ehdr(state, &ehdr);
 	if (res == TEE_ERROR_BAD_FORMAT)
 		res = e64_load_ehdr(state, &ehdr);

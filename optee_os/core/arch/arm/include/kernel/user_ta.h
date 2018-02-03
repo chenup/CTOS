@@ -34,6 +34,8 @@
 #include <tee_api_types.h>
 #include <types_ext.h>
 #include <util.h>
+//TODO 2018-2-3
+#include <signed_hdr.h>
 
 TAILQ_HEAD(tee_cryp_state_head, tee_cryp_state);
 TAILQ_HEAD(tee_obj_head, tee_obj);
@@ -104,4 +106,7 @@ static inline TEE_Result tee_ta_register_ta_store(
 //TODO
 TEE_Result sn_tee_ta_register_ta_store(const struct user_ta_store_ops *ops);
 TEE_Result sn_tee_ta_init_user_ta_session(const TEE_UUID *uuid, struct tee_ta_session *s);
+
+//TODO 2018-2-3
+TEE_Result tee_ta_load(struct shdr *signed_ta, struct proc *proc);
 #endif /*KERNEL_USER_TA_H*/

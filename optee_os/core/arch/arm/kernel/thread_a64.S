@@ -181,7 +181,7 @@ END_FUNC thread_resume
 //TODO 2018-2-3
 FUNC proc_entry , :
 	mov x21, x30
-	bl	sn_tee_ta_exec
+	bl	tee_ta_exec
 
 	mov sp, x19
 	msr spsr_el1, x20

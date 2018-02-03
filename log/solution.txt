@@ -541,4 +541,36 @@ optee process load
 \optee_os\core\arch\arm\kernel\thread_a64.S
 -> FUNC proc_entry {...} END_FUNC proc_entry
 
+\optee_os\core\include\kernel\tee_ta_manager.h
+-> TEE_Result tee_ta_exec(void* ta_addr, size_t pn);
 
+\optee_os\core\kernel\tee_ta_manager.c
+-> #include <kernel/proc.h>
+-> TEE_Result tee_ta_exec(void* ta_addr, size_t pn) {...}
+
+\optee_os\core\arch\arm\include\kernel\user_ta.h
+-> #include <signed_hdr.h>
+-> TEE_Result tee_ta_load(struct shdr *signed_ta, struct proc *proc);
+
+\optee_os\core\arch\arm\kernel\user_ta.c
+-> #include <kernel/proc.h>
+-> TEE_Result tee_ta_load(struct shdr *signed_ta, struct proc *proc) {...}
+-> static TEE_Result sn_load_elf(struct proc *proc, struct shdr *shdr) {...}
+
+\optee_os\core\arch\arm\kernel\elf_load.h
+-> #include <signed_hdr.h>
+-> TEE_Result sn_elf_load_init(struct elf_load_state **ret_state, struct shdr *shdr); 
+-> TEE_Result sn_elf_load_head(struct elf_load_state *state, size_t head_size, void **head, size_t *vasize);
+
+\optee_os\core\arch\arm\kernel\elf_load.c
+-> TEE_Result sn_elf_load_init(struct elf_load_state **ret_state, struct shdr *shdr) {...}
+-> TEE_Result sn_elf_load_head(struct elf_load_state *state, size_t head_size, void **head, size_t *vasize) {...}
+-> static TEE_Result sn_e64_load_ehdr(struct elf_load_state *state, Elf32_Ehdr *eh32) {...}
+-> static TEE_Result sn_load_head(struct elf_load_state *state, size_t head_size) {...}
+
+\optee_os\core\arch\arm\mm\tee_mmu.c
+-> #include <kernel/proc.h>
+-> TEE_Result sn_tee_mmu_init(struct run_info *run) {...}
+
+\optee_os\core\include\mm\tee_mmu.h
+-> TEE_Result sn_tee_mmu_init(struct run_info *run);

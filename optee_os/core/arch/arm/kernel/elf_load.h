@@ -29,6 +29,8 @@
 
 #include <types_ext.h>
 #include <tee_api_types.h>
+//TODO 2018-2-3
+#include <signed_hdr.h>
 
 struct elf_load_state;
 
@@ -67,8 +69,17 @@ struct user_ta_store_ops {
 TEE_Result elf_load_init(const struct user_ta_store_ops *ta_store,
 			 struct user_ta_store_handle *ta_handle,
 			 struct elf_load_state **state);
+
+//TODO 2018-2-3
+TEE_Result sn_elf_load_init(struct elf_load_state **ret_state, struct shdr *shdr);
+
 TEE_Result elf_load_head(struct elf_load_state *state, size_t head_size,
 			void **head, size_t *vasize, bool *is_32bit);
+
+//TODO 2018-2-3
+TEE_Result sn_elf_load_head(struct elf_load_state *state, size_t head_size,
+			void **head, size_t *vasize);
+
 TEE_Result elf_load_body(struct elf_load_state *state, vaddr_t vabase);
 TEE_Result elf_load_get_next_segment(struct elf_load_state *state, size_t *idx,
 			vaddr_t *vaddr, size_t *size, uint32_t *flags,
