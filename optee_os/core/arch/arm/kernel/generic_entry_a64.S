@@ -33,7 +33,6 @@
 #include <sm/optee_smc.h>
 #include <sm/teesmc_opteed.h>
 #include <sm/teesmc_opteed_macros.h>
-
 	/*
 	 * Setup SP_EL0 and SPEL1, SP will be set to SP_EL0.
 	 * SP_EL0 is assigned stack_tmp_export + cpu_id * stack_tmp_stride
@@ -177,6 +176,9 @@ clear_bss:
 	 * generic_boot.c.
 	 */
 	bl 	thread_clr_boot_thread
+
+	//TODO 2018-2-3
+	bl 	proc_clr_boot
 
 	/* Pass the vector address returned from main_init */
 	mov	x1, x19

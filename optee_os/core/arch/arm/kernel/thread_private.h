@@ -36,6 +36,8 @@
 #include <kernel/vfp.h>
 #include <kernel/mutex.h>
 #include <kernel/thread.h>
+//TODO 2018-2-3
+#include <kernel/proc.h>
 
 enum thread_state {
 	THREAD_STATE_FREE,
@@ -192,7 +194,7 @@ void thread_init_vbar(void);
 void thread_std_smc_entry(void);
 
 //TODO 2018-2-3
-void tee_thread_std_smc_entry(void);
+void proc_entry(void);
 
 struct thread_core_local *thread_get_core_local(void);
 

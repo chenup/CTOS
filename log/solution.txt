@@ -482,11 +482,11 @@ optee proc structure
 \optee_os\core\arch\arm\include\kernel\
 + proc.h
 
-\optee_os\core\arch\arm\include\kernel\thread.h
--> #define NUM_PROCS 16
+\optee_os\core\arch\arm\kernel\
++ proc.c
 
-\optee_os\core\arch\arm\kernel\thread.c
--> struct proc procs[NUM_PROCS];
+\optee_os\core\arch\arm\kernel\sub.mk
+-> srcs-y += proc.c
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee message
@@ -497,26 +497,48 @@ optee message
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee schedule on proc
 ++++++++++++++++++++++++++++++++++++++++++++++++
-######phase 3######
 \optee_os\core\arch\arm\kernel\thread_private.h
+-> #include <kernel/proc.h>
 -> int call_resume(struct pcb_regs *regs, uint32_t spsr);
+
+\optee_os\core\arch\arm\kernel\thread_a64.S
+-> FUNC call_resume {...} END_FUNC call_resume
+
+\optee_os\core\arch\arm\kernel\asm-defines.c
+-> #include <kernel/proc.h>
+-> DEFINE(PCB_REGS_SP, offsetof(struct proc, regs.sp));
+-> DEFINE(PCB_REGS_X0, offsetof(struct proc, regs.x[0]));
+-> DEFINE(PCB_REGS_X1, offsetof(struct proc, regs.x[1]));
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee process load
 ++++++++++++++++++++++++++++++++++++++++++++++++
 ######phase 1######
+\optee_os\core\arch\arm\kernel\generic_entry_a64.S
+-> bl proc_clr_boot (FUNC _start {...} END_FUNC _start)
+
+\optee_os\core\arch\arm\kernel\proc.c
+-> #include "thread_private.h"
+-> static void init_proc(void) {...}
+-> void proc_clr_boot(void) {...}
+-> int proc_alloc_and_run(void *ta) {...}
+
+\optee_os\core\arch\arm\include\kernel\proc.h
+-> void proc_clr_boot(void);
+-> int proc_alloc_and_run(void *ta);
+
 \optee_os\core\arch\arm\kernel\thread.c
--> #include <kernel/proc.h>
+-> static struct cpu_local cpu_locals[CFG_TEE_CORE_NB_CORE];
+-> void init_cpu_locals(void) {...}
 -> void thread_clr_boot_thread(void) {...}
--> int tee_thread_alloc_and_run(void *ta) {...}
 
 \optee_os\core\arch\arm\include\kernel\thread.h
--> int tee_thread_alloc_and_run(void *ta);
+-> void init_cpu_locals(void);
 
 \optee_os\core\arch\arm\kernel\thread_private.h
--> void tee_thread_std_smc_entry(void);
+-> void proc_entry(void);
 
 \optee_os\core\arch\arm\kernel\thread_a64.S
-
+-> FUNC proc_entry {...} END_FUNC proc_entry
 
 

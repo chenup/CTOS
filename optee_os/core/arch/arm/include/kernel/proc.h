@@ -10,6 +10,15 @@
 #include <mm/mobj.h>
 #include <kernel/ipc.h>
 
+#define NUM_PROCS 16
+#define NUM_PRIO 8
+
+struct cpu_local {
+	vaddr_t tmp_stack;
+	int cur_proc;
+	uint64_t x[4];
+};
+
 struct pcb_regs {
     uint64_t sp;
     uint64_t pc;
@@ -49,5 +58,11 @@ struct proc {
 	struct proc* p_q_link;
 	struct list_head link;
 };
+
+//TODO 2018-2-3
+void proc_clr_boot(void);
+
+//TODO 2018-2-3
+int proc_alloc_and_run(void *ta);
 
 #endif

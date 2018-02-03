@@ -51,3 +51,6 @@ srcs-$(CFG_ARM64_core) += unwind_arm64.c
 endif
 
 srcs-y += link_dummies.c
+
+#TODO 2018-2-3
+srcs-y += proc.c

@@ -178,6 +178,41 @@ FUNC thread_resume , :
 	eret
 END_FUNC thread_resume
 
+//TODO 2018-2-3
+FUNC proc_entry , :
+	mov x21, x30
+	bl	sn_tee_ta_exec
+
+	mov sp, x19
+	msr spsr_el1, x20
+	load_xregs sp, 0, 19, 30
+	add sp, sp, #96 // free memory for gregs x19..x30
+	msr elr_el1, x30
+	eret
+	/*
+	 * Load the returned x0-x3 into preserved registers and skip the
+	 * "returned" x4-x7 since they will not be returned to normal
+	 * world.
+	 */
+	load_xregs sp, THREAD_SMC_ARGS_X0, 20, 23
+	add	sp, sp, #THREAD_SMC_ARGS_SIZE
+
+	/* Mask all maskable exceptions before switching to temporary stack */
+	msr	daifset, #DAIFBIT_ALL
+	bl	thread_get_tmp_sp
+	mov	sp, x0
+
+	bl	thread_state_free
+
+	ldr	x0, =TEESMC_OPTEED_RETURN_CALL_DONE
+	mov	x1, x20
+	mov	x2, x21
+	mov	x3, x22
+	mov	x4, x23
+	smc	#0
+	b	.	/* SMC should not return */
+END_FUNC proc_entry
+
 /* TODO */
 FUNC sn_thread_std_smc_entry , :
 	/* pass x0-x7 in a struct thread_smc_args */
@@ -244,6 +279,22 @@ FUNC thread_std_smc_entry , :
 	smc	#0
 	b	.	/* SMC should not return */
 END_FUNC thread_std_smc_entry
+
+//TODO 2018-2-3
+/* void call_resume(struct pcb_regs *regs) */
+FUNC call_resume , :
+	sub sp, sp, #96 // make room for gregs x19..x30, 12*8 bytes
+	store_xregs sp, 0, 19, 30
+	mov x19, sp
+	mov x20, x1
+	load_xregs x0, PCB_REGS_SP, 1, 3
+	mov	sp, x1
+	msr	elr_el1, x2
+	msr	spsr_el1, x3
+	ldr	x1, [x0, PCB_REGS_X1]
+	ldr	x0, [x0, PCB_REGS_X0]
+	eret
+END_FUNC call_resume
 
 /* void thread_rpc(uint32_t rv[THREAD_RPC_NUM_ARGS]) */
 FUNC thread_rpc , :

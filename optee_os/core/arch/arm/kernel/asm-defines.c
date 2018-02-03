@@ -26,6 +26,8 @@
  */
 
 #include <kernel/thread.h>
+//TODO 2018-2-3
+#include <kernel/proc.h>
 #include <sm/sm.h>
 #include <types_ext.h>
 #include "thread_private.h"
@@ -86,6 +88,13 @@ DEFINES
 	DEFINE(THREAD_CTX_REGS_X1, offsetof(struct thread_ctx_regs, x[1]));
 	DEFINE(THREAD_CTX_REGS_X4, offsetof(struct thread_ctx_regs, x[4]));
 	DEFINE(THREAD_CTX_REGS_X19, offsetof(struct thread_ctx_regs, x[19]));
+
+	//TODO 2018-2-3
+	/* struct proc */
+	/* struct pcb_regs */
+	DEFINE(PCB_REGS_SP, offsetof(struct proc, regs.sp));
+	DEFINE(PCB_REGS_X0, offsetof(struct proc, regs.x[0]));
+	DEFINE(PCB_REGS_X1, offsetof(struct proc, regs.x[1]));
 
 	/* struct thread_user_mode_rec */
 	DEFINE(THREAD_USER_MODE_REC_EXIT_STATUS0_PTR,
