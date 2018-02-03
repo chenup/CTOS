@@ -55,6 +55,8 @@
 //TODO
 #include <tee\entry_std.h>
 #include "thread_private.h"
+//TODO 2018-2-3
+#include <kernel/proc.h>
 
 #ifdef CFG_WITH_ARM_TRUSTED_FW
 #define STACK_TMP_OFFS		0
@@ -91,6 +93,9 @@
 #endif /*ARM64*/
 
 struct thread_ctx threads[CFG_NUM_THREADS];
+
+//TODO 2018-2-3
+struct proc procs[NUM_PROCS];
 
 //TODO
 struct thread_ctx th_head = { 
@@ -427,6 +432,34 @@ void thread_init_boot_thread(void)
 	threads[0].state = THREAD_STATE_ACTIVE;
 }
 
+//TODO 2018-2-2
+void thread_clr_boot_thread(void)
+{
+	int res;
+	struct thread_core_local *l = thread_get_core_local();
+
+	assert(l->curr_thread >= 0 && l->curr_thread < CFG_NUM_THREADS);
+	assert(threads[l->curr_thread].state == THREAD_STATE_ACTIVE);
+	assert(TAILQ_EMPTY(&threads[l->curr_thread].mutexes));
+	threads[l->curr_thread].state = THREAD_STATE_FREE;
+	l->curr_thread = -1;
+	//TODO
+	//proc_init();
+	res = tee_thread_alloc_and_run((void*)0x6100000ul);
+	if(res != 0)
+	{
+		DMSG("tee_thread_alloc_and_run error!\n");
+	}
+	res = tee_thread_alloc_and_run((void*)0x61226c4ul);
+	if(res != 0)
+	{
+		DMSG("tee_thread_alloc_and_run error!\n");
+	}
+	//sn_sched();
+}
+
+//useless code 2018-2-2
+/*
 void thread_clr_boot_thread(void)
 {
 	struct thread_core_local *l = thread_get_core_local();
@@ -439,8 +472,65 @@ void thread_clr_boot_thread(void)
 	//TODO
 	sn_thread_alloc_and_run();
 }
+*/
+
+//TODO 2018-2-2
+int tee_thread_alloc_and_run(void *ta)
+{
+	size_t n;
+	bool found_prc = false;
+	struct proc* proc;
+	uint32_t spsr = SPSR_64(SPSR_64_MODE_EL1, SPSR_64_MODE_SP_EL0, 0);
+	spsr |= read_daif();
+
+	lock_global();
+
+	for (n = 0; n < NUM_PROCS; n++) 
+	{
+		if (procs[n].p_endpoint == -1) 
+		{
+			procs[n].p_endpoint = n;
+			found_proc = true;
+			break;
+		}
+	}
+
+	unlock_global();
+
+	if (!found_proc) {
+		DMSG("\nproc alloc error!\n");
+		return -1;
+	}
+
+	proc = &procs[n];
+	proc->regs.pc = (uint64_t)tee_thread_std_smc_entry;
+
+	/*
+	 * Stdcalls starts in SVC mode with masked foreign interrupts, masked
+	 * Asynchronous abort and unmasked native interrupts.
+	 */
+	proc->regs.spsr = SPSR_64(SPSR_64_MODE_EL1, SPSR_64_MODE_SP_EL0,
+				THREAD_EXCP_FOREIGN_INTR | DAIFBIT_ABT);
+
+	/* Reinitialize stack pointer */
+	proc->regs.sp = proc->k_stack;
+	proc->p_prio = 4;
+	/*
+	 * Copy arguments into context. This will make the
+	 * arguments appear in x0-x7 when thread is started.
+	 */
+	proc->regs.x[0] = (uint64_t)ta;
+	proc->regs.x[1] = (uint64_t)n;
+	/* Set up frame pointer as per the Aarch64 AAPCS */
+	//proc->regs.x[29] = 0;
+
+	//thread_lazy_save_ns_vfp();
+	return call_resume(&procs[n].regs, spsr);
+}
+
 //TODO
 void sn_thread_std_smc_entry(void);
+
 //TODO
 static void sn_thread_alloc_and_run(void)
 {

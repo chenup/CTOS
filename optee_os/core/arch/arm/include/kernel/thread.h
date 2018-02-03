@@ -44,6 +44,9 @@
 
 #define THREAD_RPC_MAX_NUM_PARAMS	4
 
+//TODO 2018-2-3
+#define NUM_PROCS 16
+
 #ifndef ASM
 struct thread_vector_table {
 	uint32_t std_smc_entry;
@@ -572,6 +575,9 @@ void thread_rpc_free_payload(uint64_t cookie, struct mobj *mobj);
  */
 uint32_t thread_rpc_cmd(uint32_t cmd, size_t num_params,
 		struct optee_msg_param *params);
+
+//TODO 2018-2-2
+int tee_thread_alloc_and_run(void *ta);
 
 #endif /*ASM*/
 

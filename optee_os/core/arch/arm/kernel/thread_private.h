@@ -191,6 +191,9 @@ void thread_init_vbar(void);
 /* Handles a stdcall, r0-r7 holds the parameters */
 void thread_std_smc_entry(void);
 
+//TODO 2018-2-3
+void tee_thread_std_smc_entry(void);
+
 struct thread_core_local *thread_get_core_local(void);
 
 /*
@@ -202,6 +205,9 @@ struct thread_core_local *thread_get_core_local(void);
  * in the flags field in the thread context.
  */
 void thread_resume(struct thread_ctx_regs *regs);
+
+//TODO 2018-2-3
+int call_resume(struct pcb_regs *regs, uint32_t spsr);
 
 uint32_t __thread_enter_user_mode(unsigned long a0, unsigned long a1,
 		unsigned long a2, unsigned long a3, unsigned long user_sp,

@@ -477,9 +477,46 @@ optee mutex
 -> void syscall_sn_test(void) {...}
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
-optee porcess load
+optee proc structure
+++++++++++++++++++++++++++++++++++++++++++++++++
+\optee_os\core\arch\arm\include\kernel\
++ proc.h
+
+\optee_os\core\arch\arm\include\kernel\thread.h
+-> #define NUM_PROCS 16
+
+\optee_os\core\arch\arm\kernel\thread.c
+-> struct proc procs[NUM_PROCS];
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee message
+++++++++++++++++++++++++++++++++++++++++++++++++
+\optee_os\core\arch\arm\include\kernel\
++ ipc.h
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee schedule on proc
+++++++++++++++++++++++++++++++++++++++++++++++++
+######phase 3######
+\optee_os\core\arch\arm\kernel\thread_private.h
+-> int call_resume(struct pcb_regs *regs, uint32_t spsr);
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee process load
 ++++++++++++++++++++++++++++++++++++++++++++++++
 ######phase 1######
+\optee_os\core\arch\arm\kernel\thread.c
+-> #include <kernel/proc.h>
+-> void thread_clr_boot_thread(void) {...}
+-> int tee_thread_alloc_and_run(void *ta) {...}
+
+\optee_os\core\arch\arm\include\kernel\thread.h
+-> int tee_thread_alloc_and_run(void *ta);
+
+\optee_os\core\arch\arm\kernel\thread_private.h
+-> void tee_thread_std_smc_entry(void);
+
+\optee_os\core\arch\arm\kernel\thread_a64.S
 
 
 
