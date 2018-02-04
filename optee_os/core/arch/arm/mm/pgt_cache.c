@@ -190,6 +190,17 @@ static void push_to_free_list(struct pgt *p)
 }
 #endif
 
+//TODO 2018-2-4
+static void sn_pgt_free_unlocked(struct pgt_cache *pgt_cache)
+{
+	while (!SLIST_EMPTY(pgt_cache)) {
+		struct pgt *p = SLIST_FIRST(pgt_cache);
+
+		SLIST_REMOVE_HEAD(pgt_cache, link);
+		push_to_free_list(p);
+	}
+}
+
 #ifdef CFG_PAGED_USER_TA
 static void push_to_cache_list(struct pgt *pgt)
 {
@@ -508,6 +519,34 @@ static struct pgt *pop_from_some_list(vaddr_t vabase __unused,
 }
 #endif /*!CFG_PAGED_USER_TA*/
 
+//TODO 2018-2-4
+static bool sn_pgt_alloc_unlocked(struct pgt_cache *pgt_cache,
+			       vaddr_t begin, vaddr_t last)
+{
+	const vaddr_t base = ROUNDDOWN(begin, CORE_MMU_PGDIR_SIZE);
+	const size_t num_tbls = ((last - base) >> CORE_MMU_PGDIR_SHIFT) + 1;
+	size_t n = 0;
+	struct pgt *p;
+	struct pgt *pp = NULL;
+
+	while (n < num_tbls) {
+		p = pop_from_free_list();
+		if (!p) {
+			sn_pgt_free_unlocked(pgt_cache);
+			return false;
+		}
+
+		if (pp)
+			SLIST_INSERT_AFTER(pp, p, link);
+		else
+			SLIST_INSERT_HEAD(pgt_cache, p, link);
+		pp = p;
+		n++;
+	}
+
+	return true;
+}
+
 static bool pgt_alloc_unlocked(struct pgt_cache *pgt_cache, void *ctx,
 			       vaddr_t begin, vaddr_t last)
 {
@@ -532,6 +571,32 @@ static bool pgt_alloc_unlocked(struct pgt_cache *pgt_cache, void *ctx,
 		n++;
 	}
 
+	return true;
+}
+
+//TODO 2018-2-4
+bool sn_pgt_alloc(struct pgt_cache *pgt_cache,
+	       vaddr_t begin, vaddr_t last)
+{	
+	if (last <= begin)
+		return false;
+
+	//mutex_lock(&pgt_mu);
+
+	sn_pgt_free_unlocked(pgt_cache);
+
+	if(!sn_pgt_alloc_unlocked(pgt_cache, begin, last)) {
+		//mutex_unlock(&pgt_mu);
+		return false;
+	}
+	/*
+	while (!pgt_alloc_unlocked(pgt_cache, ctx, begin, last)) {
+		DMSG("Waiting for page tables");
+		condvar_broadcast(&pgt_cv);
+		condvar_wait(&pgt_cv, &pgt_mu);
+	}
+	*/
+	//mutex_unlock(&pgt_mu);
 	return true;
 }
 

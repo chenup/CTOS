@@ -291,6 +291,22 @@ static void free_pgt(struct user_ta_ctx *utc, vaddr_t base, size_t size)
 	pgt_flush_ctx_range(pgt_cache, &utc->ctx, base, base + size);
 }
 
+//TODO 2018-2-4
+void sn_tee_mmu_map_stack(struct run_info *run)
+{
+	const size_t granule = CORE_MMU_USER_CODE_SIZE;
+	struct tee_ta_region *region = run->mmu->regions +
+				       TEE_MMU_UMAP_STACK_IDX;
+
+	region->mobj = run->mobj_stack;
+	region->offset = 0;
+	region->va = run->mmu->ta_private_vmem_start;
+	region->size = ROUNDUP(run->mobj_stack->size, granule);
+	region->attr = TEE_MATTR_VALID_BLOCK | TEE_MATTR_SECURE |
+		       TEE_MATTR_URW | TEE_MATTR_PRW |
+		       (TEE_MATTR_CACHE_CACHED << TEE_MATTR_CACHE_SHIFT);
+}
+
 void tee_mmu_map_stack(struct user_ta_ctx *utc, struct mobj *mobj)
 {
 	const size_t granule = CORE_MMU_USER_CODE_SIZE;
@@ -305,6 +321,100 @@ void tee_mmu_map_stack(struct user_ta_ctx *utc, struct mobj *mobj)
 		       TEE_MATTR_URW | TEE_MATTR_PRW |
 		       (TEE_MATTR_CACHE_CACHED << TEE_MATTR_CACHE_SHIFT);
 }
+
+//TODO 2018-2-4
+TEE_Result sn_tee_mmu_map_add_segment(struct proc *proc, struct mobj *mobj,
+				   size_t offs, size_t size, uint32_t prot)
+{
+	const uint32_t attr = TEE_MATTR_VALID_BLOCK | TEE_MATTR_SECURE |
+			      (TEE_MATTR_CACHE_CACHED << TEE_MATTR_CACHE_SHIFT);
+	const size_t granule = CORE_MMU_USER_CODE_SIZE;
+	struct tee_mmu_info *mmu = proc->run_info.mmu;
+	struct tee_ta_region *tbl = mmu->regions;
+	vaddr_t va;
+	vaddr_t end_va;
+	size_t n = TEE_MMU_UMAP_CODE_IDX;
+	size_t o;
+
+	if (!tbl[n].size) {
+		/* We're continuing the va space from previous entry. */
+		assert(tbl[n - 1].size);
+
+		/* This is the first segment */
+		va = tbl[n - 1].va + tbl[n - 1].size;
+		end_va = ROUNDUP((offs & (granule - 1)) + size, granule) + va;
+		o = ROUNDDOWN(offs, granule);
+		goto set_entry;
+	}
+
+	/*
+	 * mobj of code segments must not change once the first is
+	 * assigned.
+	 */
+	if (mobj != tbl[n].mobj)
+		return TEE_ERROR_SECURITY;
+
+	/*
+	 * Let's find an entry we overlap with or if we need to add a new
+	 * entry.
+	 */
+	o = offs - tbl[n].offset;
+	va = ROUNDDOWN(o, granule) + tbl[n].va;
+	end_va = ROUNDUP(o + size, granule) + tbl[n].va;
+	o = ROUNDDOWN(offs, granule);
+	while (true) {
+		if (va >= (tbl[n].va + tbl[n].size)) {
+			n++;
+			if (n >= TEE_MMU_UMAP_PARAM_IDX)
+				return TEE_ERROR_SECURITY;
+			if (!tbl[n].size)
+				goto set_entry;
+			continue;
+		}
+
+		/*
+		 * There's at least partial overlap with this entry
+		 *
+		 * Since we're overlapping there should be at least one
+		 * free entry after this.
+		 */
+		if (((n + 1) >= TEE_MMU_UMAP_PARAM_IDX) || tbl[n + 1].size)
+			return TEE_ERROR_SECURITY;
+
+		/* offset must match or the segments aren't added in order */
+		if (o != (va - tbl[n].va + tbl[n].offset))
+			return TEE_ERROR_SECURITY;
+		/* We should only overlap in the last granule of the entry. */
+		if ((va + granule) < (tbl[n].va + tbl[n].size))
+			return TEE_ERROR_SECURITY;
+
+		/* Merge protection attribute for this entry */
+		tbl[n].attr |= prot;
+
+		va += granule;
+		/* If the segment was completely overlapped, we're done. */
+		if (va == end_va)
+			return TEE_SUCCESS;
+		o += granule;
+		n++;
+		goto set_entry;
+	}
+
+set_entry:
+	tbl[n].mobj = mobj;
+	tbl[n].va = va;
+	tbl[n].offset = o;
+	tbl[n].size = end_va - va;
+	tbl[n].attr = prot | attr;
+
+	mmu->ta_private_vmem_end = tbl[n].va + tbl[n].size;
+	/*
+	 * Check that we have enough translation tables available to map
+	 * this TA.
+	 */
+	return TEE_SUCCESS;
+}
+
 
 TEE_Result tee_mmu_map_add_segment(struct user_ta_ctx *utc, struct mobj *mobj,
 				   size_t offs, size_t size, uint32_t prot)
@@ -396,6 +506,13 @@ set_entry:
 	 */
 	return alloc_pgt(utc, utc->mmu->ta_private_vmem_start,
 			 utc->mmu->ta_private_vmem_end);
+}
+
+//TODO 2018-2-4
+void sn_tee_mmu_map_clear(struct run_info *run)
+{
+	run->mmu->ta_private_vmem_end = 0;
+	memset(run->mmu->regions, 0, sizeof(run->mmu->regions));
 }
 
 void tee_mmu_map_clear(struct user_ta_ctx *utc)
@@ -786,6 +903,19 @@ TEE_Result tee_mmu_check_access_rights(const struct user_ta_ctx *utc,
 	}
 
 	return TEE_SUCCESS;
+}
+//TODO 2018-2-4
+void sn_tee_mmu_set_ctx(struct proc *proc)
+{
+
+	//sn_pgt_free(&proc->pgt_cache);		
+	if(proc) {
+		struct core_mmu_user_map user_map = {0};
+		sn_core_mmu_create_user_map(proc);
+		user_map.user_map = proc->map;
+		core_mmu_set_user_map(&user_map);
+	}else
+		core_mmu_set_user_map(NULL);
 }
 
 void tee_mmu_set_ctx(struct tee_ta_ctx *ctx)

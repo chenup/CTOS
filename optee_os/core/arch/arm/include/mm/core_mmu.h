@@ -35,6 +35,8 @@
 #include <platform_config.h>
 #include <types_ext.h>
 #include <util.h>
+//TODO 2018-2-4
+#include <kernel/proc.h>
 
 /* A small page is the smallest unit of memory that can be mapped */
 #define SMALL_PAGE_SHIFT	12
@@ -267,6 +269,10 @@ uint32_t core_mmu_type_to_attr(enum teecore_memtypes t);
  * @utc:	Pointer to user TA context
  * @map:	MMU configuration to use when activating this VA space
  */
+
+//TODO 2018-2-4
+void sn_core_mmu_create_user_map(struct proc *proc);
+
 void core_mmu_create_user_map(struct user_ta_ctx *utc,
 			      struct core_mmu_user_map *map);
 /*
@@ -319,6 +325,9 @@ bool core_mmu_divide_block(struct core_mmu_table_info *tbl_info,
 
 void core_mmu_set_entry_primitive(void *table, size_t level, size_t idx,
 				  paddr_t pa, uint32_t attr);
+
+//TODO 2018-2-4
+void sn_core_mmu_get_user_pgdir(struct core_mmu_table_info *pgd_info, struct proc *proc);
 
 void core_mmu_get_user_pgdir(struct core_mmu_table_info *pgd_info);
 

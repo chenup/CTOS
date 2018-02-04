@@ -73,6 +73,11 @@ static inline bool pgt_check_avail(size_t num_tbls)
 
 void pgt_alloc(struct pgt_cache *pgt_cache, void *owning_ctx,
 	       vaddr_t begin, vaddr_t last);
+
+//TODO 2018-2-4
+bool sn_pgt_alloc(struct pgt_cache *pgt_cache,
+	       vaddr_t begin, vaddr_t last);
+
 void pgt_free(struct pgt_cache *pgt_cache, bool save_ctx);
 
 #ifdef CFG_PAGED_USER_TA

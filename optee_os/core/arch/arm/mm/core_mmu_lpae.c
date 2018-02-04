@@ -589,6 +589,18 @@ void core_mmu_set_info_table(struct core_mmu_table_info *tbl_info,
 		tbl_info->num_entries = XLAT_TABLE_ENTRIES;
 }
 
+//TODO 2018-2-4
+void sn_core_mmu_get_user_pgdir(struct core_mmu_table_info *pgd_info,
+					struct proc *proc)
+{
+	vaddr_t va_range_base;
+	assert(proc->p_endpoint >= 0);
+	void *tbl = xlat_tables_ul1[proc->p_endpoint];
+
+	core_mmu_get_user_va_range(&va_range_base, NULL);
+	core_mmu_set_info_table(pgd_info, 2, va_range_base, tbl);
+}
+
 void core_mmu_get_user_pgdir(struct core_mmu_table_info *pgd_info)
 {
 	vaddr_t va_range_base;
@@ -596,6 +608,20 @@ void core_mmu_get_user_pgdir(struct core_mmu_table_info *pgd_info)
 
 	core_mmu_get_user_va_range(&va_range_base, NULL);
 	core_mmu_set_info_table(pgd_info, 2, va_range_base, tbl);
+}
+
+//TODO 2018-2-4
+void sn_core_mmu_create_user_map(struct proc *proc)
+{
+	struct core_mmu_table_info dir_info;
+
+	COMPILE_TIME_ASSERT(sizeof(uint64_t) * XLAT_TABLE_ENTRIES == PGT_SIZE);
+
+	sn_core_mmu_get_user_pgdir(&dir_info, proc);
+	memset(dir_info.table, 0, PGT_SIZE);
+	sn_core_mmu_populate_user_map(&dir_info, proc);
+	proc->map = virt_to_phys(dir_info.table) | TABLE_DESC;
+	//map->asid = utc->context & TTBR_ASID_MASK;
 }
 
 void core_mmu_create_user_map(struct user_ta_ctx *utc,

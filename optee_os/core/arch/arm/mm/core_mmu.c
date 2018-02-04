@@ -1328,6 +1328,44 @@ void core_mmu_unmap_pages(vaddr_t vstart, size_t num_pages)
 	tlbi_all();
 }
 
+//TODO 2018-2-4
+void sn_core_mmu_populate_user_map(struct core_mmu_table_info *dir_info,
+				struct proc *proc)
+{
+	struct core_mmu_table_info pg_info;
+	struct pgt_cache *pgt_cache = &proc->pgt_cache;
+	struct pgt *pgt;
+	size_t n;
+	struct run_info *run = &proc->run_info;
+
+	/* Find the last valid entry */
+	n = ARRAY_SIZE(run->mmu->regions);
+	while (true) {
+		n--;
+		if (run->mmu->regions[n].size)
+			break;
+		if (!n)
+			return;	/* Nothing to map */
+	}
+
+	/*
+	 * Allocate all page tables in advance.
+	 */
+	if(!sn_pgt_alloc(pgt_cache, run->mmu->regions[0].va,
+		  run->mmu->regions[n].va + run->mmu->regions[n].size - 1)){
+		DMSG("sn pgt alloc error!\n");
+	};
+	pgt = SLIST_FIRST(pgt_cache);
+
+	core_mmu_set_info_table(&pg_info, dir_info->level + 1, 0, NULL);
+
+	for (n = 0; n < ARRAY_SIZE(run->mmu->regions); n++) {
+		if (!run->mmu->regions[n].size)
+			continue;
+		set_pg_region(dir_info, run->mmu->regions + n, &pgt, &pg_info);
+	}
+}
+
 void core_mmu_populate_user_map(struct core_mmu_table_info *dir_info,
 				struct user_ta_ctx *utc)
 {

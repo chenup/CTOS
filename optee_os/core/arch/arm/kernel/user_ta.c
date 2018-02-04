@@ -80,6 +80,7 @@ static uint32_t elf_flags_to_mattr(uint32_t flags, bool init_attrs)
 }
 
 #ifdef CFG_PAGED_USER_TA
+
 static TEE_Result config_initial_paging(struct user_ta_ctx *utc)
 {
 	size_t n;
@@ -130,6 +131,74 @@ static TEE_Result config_final_paging(struct user_ta_ctx *utc)
 	return TEE_SUCCESS;
 }
 #endif /*!CFG_PAGED_USER_TA*/
+
+//TODO 2018-2-4
+static TEE_Result sn_config_initial_paging(struct proc *proc __unused)
+{
+	return TEE_SUCCESS;
+}
+
+//TODO 2018-2-4
+static TEE_Result sn_config_final_paging(struct proc *proc)
+{
+	struct run_info* run = &proc->run_info;
+	struct tee_mmu_info* mmu = run->mmu;
+	void *va = (void *)mmu->ta_private_vmem_t;
+	size_t vasize = mmu->ta_private_vmem_end -
+			mmu->ta_private_vmem_start;
+
+	cache_op_inner(DCACHE_AREA_CLEAN, va, vasize);
+	cache_op_inner(ICACHE_AREA_INVALIDATE, va, vasize);
+	return TEE_SUCCESS;
+}
+
+//TODO 2018-2-4
+static TEE_Result sn_load_elf_segments(struct proc *proc,
+			struct elf_load_state *elf_state, bool init_attrs)
+{
+	TEE_Result res;
+	uint32_t mattr;
+	size_t idx = 0;
+	struct run_info* run = &proc->run_info;
+	//struct tee_mmu_info* mmu = run->mmu;
+
+	sn_tee_mmu_map_clear(run);
+
+	/*
+	 * Add stack segment
+	 */
+	sn_tee_mmu_map_stack(run);
+
+	/*
+	 * Add code segment
+	 */
+	while (true) {
+		vaddr_t offs;
+		size_t size;
+		uint32_t flags;
+		uint32_t type;
+
+		res = elf_load_get_next_segment(elf_state, &idx, &offs, &size,
+						&flags, &type);
+		if (res == TEE_ERROR_ITEM_NOT_FOUND)
+			break;
+		if (res != TEE_SUCCESS)
+			return res;
+
+		if (type == PT_LOAD) {
+			mattr = elf_flags_to_mattr(flags, init_attrs);
+			res = sn_tee_mmu_map_add_segment(proc, run->mobj_code,
+						      offs, size, mattr);
+			if (res != TEE_SUCCESS)
+				return res;
+		}
+	}
+
+	if (init_attrs)
+		return sn_config_initial_paging(proc);
+	else
+		return sn_config_final_paging(proc);
+}
 
 static TEE_Result load_elf_segments(struct user_ta_ctx *utc,
 			struct elf_load_state *elf_state, bool init_attrs)
@@ -228,14 +297,14 @@ static TEE_Result sn_load_elf(struct proc *proc, struct shdr *shdr)
 	res = sn_tee_mmu_init(run);
 	if (res != TEE_SUCCESS)
 		goto out;
-	
-	//here
+
 	res = sn_load_elf_segments(proc, elf_state, true /* init attrs */);
 	if (res != TEE_SUCCESS)
 		goto out;
 
 	sn_tee_mmu_set_ctx(proc);
 
+	//here
 	res = sn_elf_load_body(elf_state, run->mmu->regions[1].va);
 	if (res != TEE_SUCCESS)
 		goto out;

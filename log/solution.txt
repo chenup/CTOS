@@ -556,6 +556,9 @@ optee process load
 -> #include <kernel/proc.h>
 -> TEE_Result tee_ta_load(struct shdr *signed_ta, struct proc *proc) {...}
 -> static TEE_Result sn_load_elf(struct proc *proc, struct shdr *shdr) {...}
+-> static TEE_Result sn_load_elf_segments(struct proc *proc, struct elf_load_state *elf_state, bool init_attrs) {...}
+-> static TEE_Result sn_config_initial_paging(struct proc *proc __unused) {...}
+-> static TEE_Result sn_config_final_paging(struct proc *proc) {...}
 
 \optee_os\core\arch\arm\kernel\elf_load.h
 -> #include <signed_hdr.h>
@@ -571,6 +574,51 @@ optee process load
 \optee_os\core\arch\arm\mm\tee_mmu.c
 -> #include <kernel/proc.h>
 -> TEE_Result sn_tee_mmu_init(struct run_info *run) {...}
+-> void sn_tee_mmu_map_clear(struct run_info *run) {...}
+-> void sn_tee_mmu_map_stack(struct run_info *run) {...}
+-> TEE_Result sn_tee_mmu_map_add_segment(struct proc *proc, struct mobj *mobj, size_t offs, size_t size, uint32_t prot) {...}
+-> void sn_tee_mmu_set_ctx(struct proc *proc) {...}
 
 \optee_os\core\include\mm\tee_mmu.h
 -> TEE_Result sn_tee_mmu_init(struct run_info *run);
+-> void sn_tee_mmu_map_clear(struct run_info* run);
+-> void sn_tee_mmu_map_stack(struct run_info *run);
+-> TEE_Result sn_tee_mmu_map_add_segment(struct proc *proc, struct mobj *mobj, size_t offs, size_t size, uint32_t prot);
+-> void sn_tee_mmu_set_ctx(struct proc *proc);
+
+\optee_os\core\arch\arm\include\mm\core_mmu.h
+-> #include <kernel/proc.h>
+-> void sn_core_mmu_create_user_map(struct proc *proc);
+-> void sn_core_mmu_get_user_pgdir(struct core_mmu_table_info *pgd_info, struct proc *proc);
+
+\optee_os\core\arch\arm\mm\core_mmu_lpae.c
+-> void sn_core_mmu_create_user_map(struct proc *proc) {...}
+-> void sn_core_mmu_get_user_pgdir(struct core_mmu_table_info *pgd_info, struct proc *proc) {...}
+
+\optee_os\core\arch\arm\mm\core_mmu_private.h
+-> void sn_core_mmu_populate_user_map(struct core_mmu_table_info *dir_info, struct proc *proc);
+
+\optee_os\core\arch\arm\mm\core_mmu.c
+-> void sn_core_mmu_populate_user_map(struct core_mmu_table_info *dir_info, struct proc *proc) {...}
+
+\optee_os\core\arch\arm\include\mm\pgt_cache.h
+-> bool sn_pgt_alloc(struct pgt_cache *pgt_cache, vaddr_t begin, vaddr_t last);
+
+\optee_os\core\arch\arm\mm\pgt_cache.c
+-> bool sn_pgt_alloc(struct pgt_cache *pgt_cache, vaddr_t begin, vaddr_t last) {...}
+-> static void sn_pgt_free_unlocked(struct pgt_cache *pgt_cache) {...}
+-> static bool sn_pgt_alloc_unlocked(struct pgt_cache *pgt_cache, vaddr_t begin, vaddr_t last) {...}
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee work left
+++++++++++++++++++++++++++++++++++++++++++++++++
+\optee_os\core\arch\arm\mm\pgt_cache.c
+-> sn_pgt_alloc()
+{
+	? mutex_lock
+	? condvar_broadcast
+	? condvar_wait
+}
+
+\optee_os\core\arch\arm\kernel\user_ta.c
+-> sn_load_elf_segments()

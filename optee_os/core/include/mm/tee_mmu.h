@@ -44,6 +44,9 @@ TEE_Result sn_tee_mmu_init(struct run_info *run);
  *---------------------------------------------------------------------------*/
 void tee_mmu_final(struct user_ta_ctx *utc);
 
+//TODO 2018-2-4
+void sn_tee_mmu_map_stack(struct run_info *run);
+
 /* Map stack of a user TA.  */
 void tee_mmu_map_stack(struct user_ta_ctx *utc, struct mobj *mobj);
 /*
@@ -52,8 +55,14 @@ void tee_mmu_map_stack(struct user_ta_ctx *utc, struct mobj *mobj);
  */
 TEE_Result tee_mmu_map_add_segment(struct user_ta_ctx *utc, struct mobj *mobj,
 				   size_t offs, size_t size, uint32_t prot);
+//TODO 2018-2-4
+TEE_Result sn_tee_mmu_map_add_segment(struct proc *proc, struct mobj *mobj,
+				   size_t offs, size_t size, uint32_t prot);
 
 void tee_mmu_map_clear(struct user_ta_ctx *utc);
+
+//TODO 2018-2-4
+void sn_tee_mmu_map_clear(struct run_info* run);
 
 /* Map parameters for a user TA */
 TEE_Result tee_mmu_map_param(struct user_ta_ctx *utc,
@@ -109,6 +118,9 @@ TEE_Result tee_mmu_check_access_rights(const struct user_ta_ctx *utc,
 /*-----------------------------------------------------------------------------
  * If ctx is NULL user mapping is removed and ASID set to 0
  *---------------------------------------------------------------------------*/
+//TODO 2018-2-4
+void sn_tee_mmu_set_ctx(struct proc *proc);
+
 void tee_mmu_set_ctx(struct tee_ta_ctx *ctx);
 struct tee_ta_ctx *tee_mmu_get_ctx(void);
 
