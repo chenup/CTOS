@@ -365,7 +365,7 @@ optee sleep
 -> #define TEE_SCN_MAX 72
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
-optee schedule
+optee schedule 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 ######phase 1######
 \optee_os\core\arch\arm\plat-vexpress\main.c
@@ -421,7 +421,7 @@ optee schedule
 + rtos_sched.h
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
-optee mutex
+optee mutex 2018-1-31
 ++++++++++++++++++++++++++++++++++++++++++++++++
 \optee_os\core\arch\arm\include\kernel\mutex.h
 -> void tee_mutex_unlock(struct mutex *m);
@@ -477,7 +477,7 @@ optee mutex
 -> void syscall_sn_test(void) {...}
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
-optee proc structure
+optee proc structure 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
 \optee_os\core\arch\arm\include\kernel\
 + proc.h
@@ -489,13 +489,13 @@ optee proc structure
 -> srcs-y += proc.c
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
-optee message
+optee message 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
 \optee_os\core\arch\arm\include\kernel\
 + ipc.h
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
-optee schedule on proc
+optee schedule on proc 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
 \optee_os\core\arch\arm\kernel\thread_private.h
 -> #include <kernel/proc.h>
@@ -511,7 +511,7 @@ optee schedule on proc
 -> DEFINE(PCB_REGS_X1, offsetof(struct proc, regs.x[1]));
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
-optee process load
+optee process load 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
 ######phase 1######
 \optee_os\core\arch\arm\kernel\generic_entry_a64.S
@@ -610,7 +610,7 @@ optee process load
 -> static bool sn_pgt_alloc_unlocked(struct pgt_cache *pgt_cache, vaddr_t begin, vaddr_t last) {...}
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
-optee work left
+optee work left 2018-2-4
 ++++++++++++++++++++++++++++++++++++++++++++++++
 \optee_os\core\arch\arm\mm\pgt_cache.c
 -> sn_pgt_alloc()
