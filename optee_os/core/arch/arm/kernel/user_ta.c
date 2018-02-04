@@ -304,14 +304,12 @@ static TEE_Result sn_load_elf(struct proc *proc, struct shdr *shdr)
 
 	sn_tee_mmu_set_ctx(proc);
 
-	//here
-	res = sn_elf_load_body(elf_state, run->mmu->regions[1].va);
+	res = sn_elf_load_body(elf_state, sn_tee_mmu_get_load_addr(run));
 	if (res != TEE_SUCCESS)
 		goto out;
-	ta_head = (struct ta_head*)run->mmu->regions[1].va;
-	run->entry = ta_head->entry.ptr64;
-	//DMSG("SNOW entry:%lx\n", ta_head->entry.ptr64);
 
+	ta_head = (struct ta_head*)sn_tee_mmu_get_load_addr(run);
+	run->entry = ta_head->entry.ptr64;
 	/*
 	 * Replace the init attributes with attributes used when the TA is
 	 * running.
@@ -408,10 +406,10 @@ TEE_Result tee_ta_load(struct shdr *signed_ta, struct proc *proc)
 
 	sn_tee_mmu_set_ctx(proc);
     proc->uregs->spsr = read_daif() & (SPSR_64_DAIF_MASK << SPSR_64_DAIF_SHIFT);
-	usr_stack = (uaddr_t)(run->mmu->regions[0].va) + run->mobj_stack->size;
+	usr_stack = (uaddr_t)sn_tee_mmu_get_load_addr(run) + run->mobj_stack->size;
 	proc->uregs->sp = usr_stack;
 	proc->uregs->pc = run->entry;
-	DMSG("ELF load address 0x%x", (uint32_t)run->mmu->regions[1].va);
+	DMSG("ELF load address 0x%x", (uint32_t)sn_tee_mmu_get_load_addr(run));
 
 	//tee_mmu_set_ctx(NULL);
 

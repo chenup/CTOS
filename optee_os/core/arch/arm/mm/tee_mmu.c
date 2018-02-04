@@ -914,8 +914,11 @@ void sn_tee_mmu_set_ctx(struct proc *proc)
 		sn_core_mmu_create_user_map(proc);
 		user_map.user_map = proc->map;
 		core_mmu_set_user_map(&user_map);
-	}else
+	}
+	else
+	{
 		core_mmu_set_user_map(NULL);
+	}
 }
 
 void tee_mmu_set_ctx(struct tee_ta_ctx *ctx)
@@ -947,6 +950,13 @@ void tee_mmu_set_ctx(struct tee_ta_ctx *ctx)
 struct tee_ta_ctx *tee_mmu_get_ctx(void)
 {
 	return thread_get_tsd()->ctx;
+}
+
+//TODO 2018-2-4
+uintptr_t sn_tee_mmu_get_load_addr(const struct run_info *const run)
+{
+	assert(run->mmu);
+	return run->mmu->regions[TEE_MMU_UMAP_CODE_IDX].va;
 }
 
 uintptr_t tee_mmu_get_load_addr(const struct tee_ta_ctx *const ctx)

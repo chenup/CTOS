@@ -423,6 +423,7 @@ optee schedule
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee mutex 2018-1-31
 ++++++++++++++++++++++++++++++++++++++++++++++++
+######phase 1###### 2018-2-1
 \optee_os\core\arch\arm\include\kernel\mutex.h
 -> void tee_mutex_unlock(struct mutex *m);
 -> void tee_mutex_lock(struct mutex *m);
@@ -479,6 +480,7 @@ optee mutex 2018-1-31
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee proc structure 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
+######phase 1######
 \optee_os\core\arch\arm\include\kernel\
 + proc.h
 
@@ -491,12 +493,14 @@ optee proc structure 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee message 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
+######phase 1######
 \optee_os\core\arch\arm\include\kernel\
 + ipc.h
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee schedule on proc 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
+######phase 1######
 \optee_os\core\arch\arm\kernel\thread_private.h
 -> #include <kernel/proc.h>
 -> int call_resume(struct pcb_regs *regs, uint32_t spsr);
@@ -564,12 +568,24 @@ optee process load 2018-2-2
 -> #include <signed_hdr.h>
 -> TEE_Result sn_elf_load_init(struct elf_load_state **ret_state, struct shdr *shdr); 
 -> TEE_Result sn_elf_load_head(struct elf_load_state *state, size_t head_size, void **head, size_t *vasize);
+-> TEE_Result sn_elf_load_body(struct elf_load_state *state, vaddr_t vabase);
+-> void sn_elf_load_final(struct elf_load_state *state);
 
 \optee_os\core\arch\arm\kernel\elf_load.c
 -> TEE_Result sn_elf_load_init(struct elf_load_state **ret_state, struct shdr *shdr) {...}
 -> TEE_Result sn_elf_load_head(struct elf_load_state *state, size_t head_size, void **head, size_t *vasize) {...}
 -> static TEE_Result sn_e64_load_ehdr(struct elf_load_state *state, Elf32_Ehdr *eh32) {...}
 -> static TEE_Result sn_load_head(struct elf_load_state *state, size_t head_size) {...}
+-> TEE_Result sn_elf_load_body(struct elf_load_state *state, vaddr_t vabase) {...}
+-> void sn_elf_load_final(struct elf_load_state *state) {...}
+
+\optee_os\core\include\mm\tee_mmu.h
+-> TEE_Result sn_tee_mmu_init(struct run_info *run);
+-> void sn_tee_mmu_map_clear(struct run_info* run);
+-> void sn_tee_mmu_map_stack(struct run_info *run);
+-> TEE_Result sn_tee_mmu_map_add_segment(struct proc *proc, struct mobj *mobj, size_t offs, size_t size, uint32_t prot);
+-> void sn_tee_mmu_set_ctx(struct proc *proc);
+-> uintptr_t sn_tee_mmu_get_load_addr(const struct run_info *const run);
 
 \optee_os\core\arch\arm\mm\tee_mmu.c
 -> #include <kernel/proc.h>
@@ -578,13 +594,7 @@ optee process load 2018-2-2
 -> void sn_tee_mmu_map_stack(struct run_info *run) {...}
 -> TEE_Result sn_tee_mmu_map_add_segment(struct proc *proc, struct mobj *mobj, size_t offs, size_t size, uint32_t prot) {...}
 -> void sn_tee_mmu_set_ctx(struct proc *proc) {...}
-
-\optee_os\core\include\mm\tee_mmu.h
--> TEE_Result sn_tee_mmu_init(struct run_info *run);
--> void sn_tee_mmu_map_clear(struct run_info* run);
--> void sn_tee_mmu_map_stack(struct run_info *run);
--> TEE_Result sn_tee_mmu_map_add_segment(struct proc *proc, struct mobj *mobj, size_t offs, size_t size, uint32_t prot);
--> void sn_tee_mmu_set_ctx(struct proc *proc);
+-> uintptr_t sn_tee_mmu_get_load_addr(const struct run_info *const run) {...}
 
 \optee_os\core\arch\arm\include\mm\core_mmu.h
 -> #include <kernel/proc.h>
@@ -610,7 +620,7 @@ optee process load 2018-2-2
 -> static bool sn_pgt_alloc_unlocked(struct pgt_cache *pgt_cache, vaddr_t begin, vaddr_t last) {...}
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
-optee work left 2018-2-4
+optee work left
 ++++++++++++++++++++++++++++++++++++++++++++++++
 \optee_os\core\arch\arm\mm\pgt_cache.c
 -> sn_pgt_alloc()
@@ -619,6 +629,3 @@ optee work left 2018-2-4
 	? condvar_broadcast
 	? condvar_wait
 }
-
-\optee_os\core\arch\arm\kernel\user_ta.c
--> sn_load_elf_segments()

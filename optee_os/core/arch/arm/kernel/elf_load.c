@@ -340,7 +340,7 @@ static TEE_Result sn_load_head(struct elf_load_state *state, size_t head_size)
 
 	struct shdr *shdr = state->ta_handle->shdr;
 	uint8_t *nwdata = (uint8_t *)shdr + SHDR_GET_SIZE(shdr);
-	
+
 	copy_ehdr(&ehdr, state);
 	/*
 	 * Program headers:
@@ -760,6 +760,75 @@ static TEE_Result e64_process_rel(struct elf_load_state *state __unused,
 }
 #endif /*ARM64*/
 
+//TODO 2018-2-4
+TEE_Result sn_elf_load_body(struct elf_load_state *state, vaddr_t vabase)
+{
+	TEE_Result res;
+	size_t n;
+	void *p;
+	uint8_t *dst = (uint8_t *)vabase;
+	struct elf_ehdr ehdr;
+	struct shdr *shdr = state->ta_handle->shdr;
+	uint8_t *nwdata = (uint8_t *)shdr + SHDR_GET_SIZE(shdr);
+	copy_ehdr(&ehdr, state);
+
+	/*
+	 * Zero initialize everything to make sure that all memory not
+	 * updated from the ELF is zero (covering .bss and eventual gaps).
+	 */
+	memset(dst, 0, state->vasize);
+
+	for (n = 0; n < ehdr.e_phnum; n++) {
+		struct elf_phdr phdr;
+
+		copy_phdr(&phdr, state, n);
+		if (phdr.p_type != PT_LOAD)
+			continue;
+
+		memcpy(dst + phdr.p_vaddr, nwdata + phdr.p_offset, phdr.p_filesz);
+	}
+
+	/*
+	 * We have now loaded all segments into TA memory, now we need to
+	 * process relocation information. To find relocation information
+	 * we need to locate the section headers. The section headers are
+	 * located somewhere between the last segment and the end of the
+	 * ELF.
+	 */
+	if (ehdr.e_shoff) {
+		/* We have section headers */
+		p = malloc(ehdr.e_shnum * ehdr.e_shentsize);
+		if(!p)
+			return TEE_ERROR_OUT_OF_MEMORY;
+		memcpy(p, nwdata + ehdr.e_shoff, ehdr.e_shnum * ehdr.e_shentsize);
+		state->shdr = p;
+	}
+
+	if (state->shdr) {
+		TEE_Result (*process_rel)(struct elf_load_state *state,
+					size_t rel_sidx, vaddr_t vabase);
+
+		if (state->is_32bit)
+			process_rel = e32_process_rel;
+		else
+			process_rel = e64_process_rel;
+
+		/* Process relocation */
+		for (n = 0; n < ehdr.e_shnum; n++) {
+			uint32_t sh_type = get_shdr_type(state, n);
+
+			if (sh_type == SHT_REL || sh_type == SHT_RELA) {
+				res = process_rel(state, n, vabase);
+				if (res != TEE_SUCCESS)
+					return res;
+			}
+		}
+	}
+
+	return TEE_SUCCESS;
+}
+
+
 TEE_Result elf_load_body(struct elf_load_state *state, vaddr_t vabase)
 {
 	TEE_Result res;
@@ -849,6 +918,18 @@ void elf_load_final(struct elf_load_state *state)
 		free(state->ta_head);
 		free(state->ehdr);
 		free(state->phdr);
+		free(state->shdr);
+		free(state);
+	}
+}
+
+//TODO 2018-2-4
+void sn_elf_load_final(struct elf_load_state *state)
+{
+	if (state) {
+		free(state->ehdr);
+		free(state->phdr);
+		free(state->ta_head);
 		free(state->shdr);
 		free(state);
 	}

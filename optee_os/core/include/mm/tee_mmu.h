@@ -127,6 +127,9 @@ struct tee_ta_ctx *tee_mmu_get_ctx(void);
 /* Returns virtual address to which TA is loaded */
 uintptr_t tee_mmu_get_load_addr(const struct tee_ta_ctx *const ctx);
 
+//TODO 2018-2-4
+uintptr_t sn_tee_mmu_get_load_addr(const struct run_info *const run);
+
 /* init some allocation pools */
 void teecore_init_ta_ram(void);
 void teecore_init_pub_ram(void);

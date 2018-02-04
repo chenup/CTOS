@@ -80,10 +80,15 @@ TEE_Result elf_load_head(struct elf_load_state *state, size_t head_size,
 TEE_Result sn_elf_load_head(struct elf_load_state *state, size_t head_size,
 			void **head, size_t *vasize);
 
+//TODO 2018-2-4
+TEE_Result sn_elf_load_body(struct elf_load_state *state, vaddr_t vabase);
 TEE_Result elf_load_body(struct elf_load_state *state, vaddr_t vabase);
 TEE_Result elf_load_get_next_segment(struct elf_load_state *state, size_t *idx,
 			vaddr_t *vaddr, size_t *size, uint32_t *flags,
 			uint32_t *type);
 void elf_load_final(struct elf_load_state *state);
+
+//TODO 2018-2-4
+void sn_elf_load_final(struct elf_load_state *state);
 
 #endif /*ELF_LOAD_H*/
