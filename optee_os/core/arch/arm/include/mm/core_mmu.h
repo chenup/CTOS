@@ -35,8 +35,6 @@
 #include <platform_config.h>
 #include <types_ext.h>
 #include <util.h>
-//TODO 2018-2-4
-#include <kernel/proc.h>
 
 /* A small page is the smallest unit of memory that can be mapped */
 #define SMALL_PAGE_SHIFT	12

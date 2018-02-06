@@ -36,6 +36,8 @@
 #include <util.h>
 //TODO 2018-2-3
 #include <signed_hdr.h>
+//TODO 2018-2-6
+#include <kernel/proc.h>
 
 TAILQ_HEAD(tee_cryp_state_head, tee_cryp_state);
 TAILQ_HEAD(tee_obj_head, tee_obj);

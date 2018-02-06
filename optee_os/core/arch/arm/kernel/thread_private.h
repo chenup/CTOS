@@ -36,8 +36,6 @@
 #include <kernel/vfp.h>
 #include <kernel/mutex.h>
 #include <kernel/thread.h>
-//TODO 2018-2-3
-#include <kernel/proc.h>
 
 enum thread_state {
 	THREAD_STATE_FREE,

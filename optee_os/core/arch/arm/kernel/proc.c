@@ -1,12 +1,13 @@
 /*
 	2018-2-3
 */
-#include <kernel/proc.h>
+
 #include <arm.h>
 #include <sm/sm.h>
 #include <kernel/thread.h>
 #include <trace.h>
-
+#include <kernel/spinlock.h>
+#include <kernel/proc.h>
 //TODO 2018-2-3
 #include "thread_private.h"
 
@@ -72,7 +73,7 @@ linkage uint32_t name[num_stacks] \
 #define GET_STACK(stack) \
 	((vaddr_t)(stack) + STACK_SIZE(stack))
 
-static struct proc procs[NUM_PROCS];
+struct proc procs[NUM_PROCS];
 
 struct list_head run_queues[NUM_PRIO];
 
@@ -111,6 +112,7 @@ static void init_proc(void)
 //TODO 2018-2-3
 void proc_clr_boot(void)
 {
+	int res;
 	init_cpu_locals();
 	init_proc();
 	res = proc_alloc_and_run((void*)0x6100000ul);
@@ -130,7 +132,7 @@ void proc_clr_boot(void)
 int proc_alloc_and_run(void *ta)
 {
 	size_t n;
-	bool found_prc = false;
+	bool found_proc = false;
 	struct proc* proc;
 	uint32_t spsr = SPSR_64(SPSR_64_MODE_EL1, SPSR_64_MODE_SP_EL0, 0);
 	spsr |= read_daif();

@@ -55,8 +55,6 @@
 #include <types_ext.h>
 #include <utee_defines.h>
 #include <util.h>
-//TODO 2018-2-3
-#include <kernel/proc.h>
 
 #include "elf_load.h"
 #include "elf_common.h"
@@ -143,7 +141,7 @@ static TEE_Result sn_config_final_paging(struct proc *proc)
 {
 	struct run_info* run = &proc->run_info;
 	struct tee_mmu_info* mmu = run->mmu;
-	void *va = (void *)mmu->ta_private_vmem_t;
+	void *va = (void *)mmu->ta_private_vmem_start;
 	size_t vasize = mmu->ta_private_vmem_end -
 			mmu->ta_private_vmem_start;
 

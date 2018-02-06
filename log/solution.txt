@@ -502,14 +502,12 @@ optee schedule on proc 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
 ######phase 1######
 \optee_os\core\arch\arm\kernel\thread_private.h
--> #include <kernel/proc.h>
 -> int call_resume(struct pcb_regs *regs, uint32_t spsr);
 
 \optee_os\core\arch\arm\kernel\thread_a64.S
 -> FUNC call_resume {...} END_FUNC call_resume
 
 \optee_os\core\arch\arm\kernel\asm-defines.c
--> #include <kernel/proc.h>
 -> DEFINE(PCB_REGS_SP, offsetof(struct proc, regs.sp));
 -> DEFINE(PCB_REGS_X0, offsetof(struct proc, regs.x[0]));
 -> DEFINE(PCB_REGS_X1, offsetof(struct proc, regs.x[1]));
@@ -532,6 +530,7 @@ optee process load 2018-2-2
 -> int proc_alloc_and_run(void *ta);
 
 \optee_os\core\arch\arm\kernel\thread.c
+-> #include <kernel/proc.h>
 -> static struct cpu_local cpu_locals[CFG_TEE_CORE_NB_CORE];
 -> void init_cpu_locals(void) {...}
 -> void thread_clr_boot_thread(void) {...}
@@ -549,15 +548,16 @@ optee process load 2018-2-2
 -> TEE_Result tee_ta_exec(void* ta_addr, size_t pn);
 
 \optee_os\core\kernel\tee_ta_manager.c
--> #include <kernel/proc.h>
 -> TEE_Result tee_ta_exec(void* ta_addr, size_t pn) {...}
+-> extern struct proc procs[];
+-> extern struct list_head run_queues[];
 
 \optee_os\core\arch\arm\include\kernel\user_ta.h
 -> #include <signed_hdr.h>
+-> #include <kernel/proc.h>
 -> TEE_Result tee_ta_load(struct shdr *signed_ta, struct proc *proc);
 
 \optee_os\core\arch\arm\kernel\user_ta.c
--> #include <kernel/proc.h>
 -> TEE_Result tee_ta_load(struct shdr *signed_ta, struct proc *proc) {...}
 -> static TEE_Result sn_load_elf(struct proc *proc, struct shdr *shdr) {...}
 -> static TEE_Result sn_load_elf_segments(struct proc *proc, struct elf_load_state *elf_state, bool init_attrs) {...}
@@ -572,6 +572,7 @@ optee process load 2018-2-2
 -> void sn_elf_load_final(struct elf_load_state *state);
 
 \optee_os\core\arch\arm\kernel\elf_load.c
+-> struct shdr *store_shdr
 -> TEE_Result sn_elf_load_init(struct elf_load_state **ret_state, struct shdr *shdr) {...}
 -> TEE_Result sn_elf_load_head(struct elf_load_state *state, size_t head_size, void **head, size_t *vasize) {...}
 -> static TEE_Result sn_e64_load_ehdr(struct elf_load_state *state, Elf32_Ehdr *eh32) {...}
@@ -588,7 +589,6 @@ optee process load 2018-2-2
 -> uintptr_t sn_tee_mmu_get_load_addr(const struct run_info *const run);
 
 \optee_os\core\arch\arm\mm\tee_mmu.c
--> #include <kernel/proc.h>
 -> TEE_Result sn_tee_mmu_init(struct run_info *run) {...}
 -> void sn_tee_mmu_map_clear(struct run_info *run) {...}
 -> void sn_tee_mmu_map_stack(struct run_info *run) {...}
@@ -597,7 +597,6 @@ optee process load 2018-2-2
 -> uintptr_t sn_tee_mmu_get_load_addr(const struct run_info *const run) {...}
 
 \optee_os\core\arch\arm\include\mm\core_mmu.h
--> #include <kernel/proc.h>
 -> void sn_core_mmu_create_user_map(struct proc *proc);
 -> void sn_core_mmu_get_user_pgdir(struct core_mmu_table_info *pgd_info, struct proc *proc);
 
@@ -618,6 +617,10 @@ optee process load 2018-2-2
 -> bool sn_pgt_alloc(struct pgt_cache *pgt_cache, vaddr_t begin, vaddr_t last) {...}
 -> static void sn_pgt_free_unlocked(struct pgt_cache *pgt_cache) {...}
 -> static bool sn_pgt_alloc_unlocked(struct pgt_cache *pgt_cache, vaddr_t begin, vaddr_t last) {...}
+
+\optee_os\core\include\mm\tee_mmu_types.h
+-> struct run_info { ... };
+-> #define TEE_NUM_PARAMS  4 (?)
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee work left

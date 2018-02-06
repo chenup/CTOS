@@ -48,8 +48,6 @@
 #include <types_ext.h>
 #include <user_ta_header.h>
 #include <util.h>
-//TODO 2018-2-4
-#include <kernel/proc.h>
 
 #ifdef CFG_PL310
 #include <kernel/tee_l2cc_mutex.h>

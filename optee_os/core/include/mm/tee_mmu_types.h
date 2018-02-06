@@ -63,8 +63,22 @@
 
 #define TEE_MMU_UMAP_PARAM_IDX		(TEE_MMU_UMAP_CODE_IDX + \
 					 TEE_MMU_UMAP_NUM_CODE_SEGMENTS)
+
+//TODO 2018-2-6
+#define TEE_NUM_PARAMS  4
+
 #define TEE_MMU_UMAP_MAX_ENTRIES	(TEE_MMU_UMAP_PARAM_IDX + \
 					 TEE_NUM_PARAMS)
+
+
+//TODO 2018-2-6
+struct run_info {
+    uint64_t entry;
+    uint64_t load_addr;
+    struct mobj *mobj_code;
+    struct mobj *mobj_stack;
+    struct tee_mmu_info *mmu;
+};
 
 struct tee_mmap_region {
 	unsigned int type; /* enum teecore_memtypes */

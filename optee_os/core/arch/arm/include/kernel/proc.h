@@ -4,11 +4,10 @@
 #ifndef KERNEL_PROC_H
 #define KERNEL_PROC_H
 
-#include <mm/pgt_cache.h>
 #include <rtos_list.h>
 #include <mm/tee_mmu_types.h>
-#include <mm/mobj.h>
 #include <kernel/ipc.h>
+#include <kernel/user_ta.h>
 
 #define NUM_PROCS 16
 #define NUM_PRIO 8
@@ -25,15 +24,6 @@ struct pcb_regs {
     uint64_t spsr;
     uint64_t x[31];
 };
-
-struct run_info {
-    uint64_t entry;
-    uint64_t load_addr;
-    struct mobj *mobj_code;
-    struct mobj *mobj_stack;
-    struct tee_mmu_info *mmu;
-};
-
 
 struct proc {
     struct pcb_regs regs;

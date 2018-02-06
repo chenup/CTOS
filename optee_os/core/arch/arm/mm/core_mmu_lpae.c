@@ -594,8 +594,9 @@ void sn_core_mmu_get_user_pgdir(struct core_mmu_table_info *pgd_info,
 					struct proc *proc)
 {
 	vaddr_t va_range_base;
+	void *tbl;
 	assert(proc->p_endpoint >= 0);
-	void *tbl = xlat_tables_ul1[proc->p_endpoint];
+	tbl = xlat_tables_ul1[proc->p_endpoint];
 
 	core_mmu_get_user_va_range(&va_range_base, NULL);
 	core_mmu_set_info_table(pgd_info, 2, va_range_base, tbl);

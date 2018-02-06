@@ -190,17 +190,6 @@ static void push_to_free_list(struct pgt *p)
 }
 #endif
 
-//TODO 2018-2-4
-static void sn_pgt_free_unlocked(struct pgt_cache *pgt_cache)
-{
-	while (!SLIST_EMPTY(pgt_cache)) {
-		struct pgt *p = SLIST_FIRST(pgt_cache);
-
-		SLIST_REMOVE_HEAD(pgt_cache, link);
-		push_to_free_list(p);
-	}
-}
-
 #ifdef CFG_PAGED_USER_TA
 static void push_to_cache_list(struct pgt *pgt)
 {
@@ -518,6 +507,17 @@ static struct pgt *pop_from_some_list(vaddr_t vabase __unused,
 	return pop_from_free_list();
 }
 #endif /*!CFG_PAGED_USER_TA*/
+
+//TODO 2018-2-4
+static void sn_pgt_free_unlocked(struct pgt_cache *pgt_cache)
+{
+	while (!SLIST_EMPTY(pgt_cache)) {
+		struct pgt *p = SLIST_FIRST(pgt_cache);
+
+		SLIST_REMOVE_HEAD(pgt_cache, link);
+		push_to_free_list(p);
+	}
+}
 
 //TODO 2018-2-4
 static bool sn_pgt_alloc_unlocked(struct pgt_cache *pgt_cache,

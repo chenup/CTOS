@@ -56,6 +56,9 @@
 #include <tee\entry_std.h>
 #include "thread_private.h"
 
+//TODO 2018-2-6
+#include <kernel/proc.h>
+
 #ifdef CFG_WITH_ARM_TRUSTED_FW
 #define STACK_TMP_OFFS		0
 #else
@@ -443,7 +446,6 @@ void init_cpu_locals(void)
 //TODO 2018-2-2
 void thread_clr_boot_thread(void)
 {
-	int res;
 	struct thread_core_local *l = thread_get_core_local();
 
 	assert(l->curr_thread >= 0 && l->curr_thread < CFG_NUM_THREADS);

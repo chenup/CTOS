@@ -192,17 +192,23 @@ static TEE_Result alloc_and_copy_to(void **p, struct elf_load_state *state,
 	return res;
 }
 
+//TODO 2018-2-5
+struct shdr *store_shdr
+
 //TODO 2018-2-3
 TEE_Result sn_elf_load_init(struct elf_load_state **ret_state, struct shdr *shdr)
 {
 	struct elf_load_state *state;
+	//struct user_ta_store_handle *store_handle;
 	//TEE_Result res;
 	//uint8_t *nwdata = (uint8_t *)shdr + SHDR_GET_SIZE(shdr);
 	//size_t nwdata_len = shdr->img_size;
 	state = calloc(1, sizeof(*state));
+	//store_handle = calloc(1, sizeof(*store_handle));
 	if (!state)
 		return TEE_ERROR_OUT_OF_MEMORY;
-	state->ta_handle->shdr = shdr;
+	store_shdr = shdr;
+	//state->ta_handle = store_handle;
 	//state->nwdata = nwdata;
 	//state->nwdata_len = nwdata_len;
 
@@ -338,8 +344,8 @@ static TEE_Result sn_load_head(struct elf_load_state *state, size_t head_size)
 	struct elf_phdr ptload0;
 	size_t phsize;
 
-	struct shdr *shdr = state->ta_handle->shdr;
-	uint8_t *nwdata = (uint8_t *)shdr + SHDR_GET_SIZE(shdr);
+	//struct shdr *shdr = state->ta_handle->shdr;
+	uint8_t *nwdata = (uint8_t *)store_shdr + SHDR_GET_SIZE(store_shdr);
 
 	copy_ehdr(&ehdr, state);
 	/*
@@ -508,11 +514,11 @@ TEE_Result sn_elf_load_head(struct elf_load_state *state, size_t head_size,
 	TEE_Result res;
 	Elf32_Ehdr *ehdr;
 
-	struct shdr *shdr = state->ta_handle->shdr;
-	uint8_t *nwdata = (uint8_t *)shdr + SHDR_GET_SIZE(shdr);
+	//struct shdr *shdr = state->ta_handle->shdr;
+	uint8_t *nwdata = (uint8_t *)store_shdr + SHDR_GET_SIZE(store_shdr);
 	//size_t nwdata_len = shdr->img_size;
 
-	ehdr = (void*)(state->nwdata);
+	ehdr = (void*)(nwdata);
 
 	if (!IS_ELF(*ehdr))
 		return TEE_ERROR_BAD_FORMAT;
@@ -768,8 +774,8 @@ TEE_Result sn_elf_load_body(struct elf_load_state *state, vaddr_t vabase)
 	void *p;
 	uint8_t *dst = (uint8_t *)vabase;
 	struct elf_ehdr ehdr;
-	struct shdr *shdr = state->ta_handle->shdr;
-	uint8_t *nwdata = (uint8_t *)shdr + SHDR_GET_SIZE(shdr);
+	//struct shdr *shdr = state->ta_handle->shdr;
+	uint8_t *nwdata = (uint8_t *)store_shdr + SHDR_GET_SIZE(store_shdr);
 	copy_ehdr(&ehdr, state);
 
 	/*

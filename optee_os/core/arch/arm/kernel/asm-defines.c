@@ -26,8 +26,6 @@
  */
 
 #include <kernel/thread.h>
-//TODO 2018-2-3
-#include <kernel/proc.h>
 #include <sm/sm.h>
 #include <types_ext.h>
 #include "thread_private.h"
