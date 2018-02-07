@@ -211,6 +211,44 @@ static TEE_Result entry_invoke_command(unsigned long session_id,
 	return res;
 }
 
+//TODO 2018-2-6
+void __noreturn __tee_utee_entry(void)
+{
+	unsigned num = 0;
+	while(1) 
+	{
+		if(num % (64*1024*1024) == 0 ) {
+			trace_ext_puts("HHHHHHHHHHHHHHHHHHHHHHH");
+		}
+		num += 1;
+	}
+	/*
+	unsigned num = 0;
+	int temp = 0;
+	struct user_msg msg;
+
+	msg.msg[0] = 'a';
+	msg.msg[1] = '\n';
+	msg.msg[2] = 0;
+	while(1) 
+	{
+		if(num % (64*1024*1024) == 0 && temp<5) {
+			trace_ext_puts("process A:I sendrec a msg to 1:");
+			msg.msg[0] += 1;
+			trace_ext_puts(msg.msg);
+			if(sn_sendrec(1, &msg) != 0) {
+				trace_ext_puts("send error\n");
+			}else {
+				trace_ext_puts("process A:sendrec suc:");
+				trace_ext_puts(msg.msg);
+			}
+			temp++;
+		}
+		num += 1;
+	}
+	*/
+}
+
 void __noreturn __utee_entry(unsigned long func, unsigned long session_id,
 			struct utee_params *up, unsigned long cmd_id)
 {

@@ -12,6 +12,11 @@
 #define NUM_PROCS 16
 #define NUM_PRIO 8
 
+//TODO 2018-2-6
+// p_misc_flags
+#define P_DELIEVE (1 << 0)
+#define P_INTER (1 << 1)
+
 struct cpu_local {
 	vaddr_t tmp_stack;
 	int cur_proc;
@@ -33,10 +38,10 @@ struct proc {
     uint32_t p_num;
     int p_endpoint;
     uint32_t time_res;
-    uint32_t p_prio;
-    uint32_t p_priv;
-	uint32_t p_rts_flags;
-	uint32_t p_misc_flags;
+    uint32_t p_prio; /* current process priority */
+    uint32_t p_priv; /* system privileges structure */
+	uint32_t p_rts_flags; /* process is runnable only if zero */
+	uint32_t p_misc_flags; /* flags that do not suspend the process */
 	struct message p_sendmsg;
 	int p_sendto;	
 	struct message p_recvmsg;	
@@ -44,8 +49,8 @@ struct proc {
 	void* p_recvaddr;	
     struct run_info run_info;
     uint64_t k_stack;
-	struct proc* p_caller_q;
-	struct proc* p_q_link;
+	struct proc* p_caller_q; /* head of list of procs wishing to send */
+	struct proc* p_q_link; /* link to next proc wishing to send */
 	struct list_head link;
 };
 
@@ -55,4 +60,6 @@ void proc_clr_boot(void);
 //TODO 2018-2-3
 int proc_alloc_and_run(void *ta);
 
+//TODO 2018-2-6
+void proc_schedule(void);
 #endif

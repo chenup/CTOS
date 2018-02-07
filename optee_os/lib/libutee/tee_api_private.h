@@ -43,6 +43,8 @@ void __utee_to_param(TEE_Param params[TEE_NUM_PARAMS],
 void __utee_entry(unsigned long func, unsigned long session_id,
 			struct utee_params *up, unsigned long cmd_id);
 
+//TODO 2018-2-6
+void __tee_utee_entry(void);
 
 #if defined(CFG_TA_GPROF_SUPPORT)
 void __utee_gprof_init(void);

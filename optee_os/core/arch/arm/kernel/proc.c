@@ -125,7 +125,8 @@ void proc_clr_boot(void)
 	{
 		DMSG("proc_alloc_and_run error!\n");
 	}
-	//sn_sched();
+	//TODO 2018-2-6
+	proc_schedule();
 }
 
 //TODO 2018-2-3
@@ -177,4 +178,53 @@ int proc_alloc_and_run(void *ta)
 	proc->regs.x[1] = (uint64_t)n;
 
 	return call_resume(&procs[n].regs, spsr);
+}
+
+//TODO 2018-2-6
+void proc_schedule(void) 
+{
+	struct cpu_local *cpu_l = get_cpu_local();
+	struct core_mmu_user_map map = { 0 };
+	struct proc *proc = NULL;
+	struct list_head* lh;
+	int i;
+	//lock_global();
+
+	for(i = 0; i < NUM_PRIO; i++) {
+		lh = &run_queues[i]; 
+		if(lh->next != lh) {
+			proc = container_of(lh->next, struct proc, link);
+			lh->next = lh->next->next;
+			lh->next->prev = lh;
+			break;
+		}
+	}
+    //proc = proc_head.next;
+	if(proc == NULL)
+		DMSG("proc_schedulde error\n");
+	//DMSG("sn_sched proc %d\n", proc->p_endpoint);
+    //proc->next->prev = &proc_head;
+    //proc_head.next = proc->next;
+	//unlock_global();
+	assert(proc->p_endpoint >= 0);
+	cpu_l->cur_proc = proc->p_endpoint;
+	map.user_map = proc->map;
+	core_mmu_set_user_map(&map);
+
+	//message
+	/*
+	if(proc->p_misc_flags & P_DELIEVE) 
+	{
+		memcpy(proc->p_recvaddr, (void*)&proc->p_recvmsg, sizeof(struct message));
+		proc->p_misc_flags &= (~P_DELIEVE);
+		//DMSG("test %s\n", (proc->p_recvmsg).msg);
+	}
+	*/
+	//thread_lazy_save_ns_vfp();
+	if(proc->p_misc_flags & P_INTER) {
+		proc->p_misc_flags &= (~P_INTER);
+		proc_resume(&(proc->regs));
+	} else{
+		proc_resume(proc->uregs);
+	}
 }

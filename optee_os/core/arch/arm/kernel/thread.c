@@ -296,6 +296,21 @@ void thread_unmask_exceptions(uint32_t state)
 	thread_set_exceptions(state & THREAD_EXCP_ALL);
 }
 
+//TODO 2018-2-6
+struct cpu_local *get_cpu_local(void)
+{
+	uint32_t cpu_id = get_core_pos();
+
+	/*
+	 * Foreign interrupts must be disabled before playing with core_local
+	 * since we otherwise may be rescheduled to a different core in the
+	 * middle of this function.
+	 */
+	assert(thread_get_exceptions() & THREAD_EXCP_FOREIGN_INTR);
+
+	assert(cpu_id < CFG_TEE_CORE_NB_CORE);
+	return &cpu_locals[cpu_id];
+}
 
 struct thread_core_local *thread_get_core_local(void)
 {

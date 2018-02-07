@@ -280,6 +280,18 @@ FUNC thread_std_smc_entry , :
 	b	.	/* SMC should not return */
 END_FUNC thread_std_smc_entry
 
+//TODO 2018-2-6
+/* void proc_resume(struct pcb_regs *regs) */
+FUNC proc_resume , :
+	load_xregs x0, UREGS_SP, 1, 3
+	mov	sp, x1
+	msr	elr_el1, x2
+	msr	spsr_el1, x3
+	load_xregs x0, UREGS_X1, 1, 30
+	ldr	x0, [x0, UREGS_X0]
+	eret
+END_FUNC proc_resume
+
 //TODO 2018-2-3
 /* void call_resume(struct pcb_regs *regs) */
 FUNC call_resume , :
@@ -381,6 +393,7 @@ KEEP_PAGER thread_init_vbar
  *               uint32_t *exit_status0, uint32_t *exit_status1)
  *
  */
+
 FUNC __thread_enter_user_mode , :
 	ldr	x8, [sp]
 	/*

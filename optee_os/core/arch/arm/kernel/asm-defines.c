@@ -94,6 +94,12 @@ DEFINES
 	DEFINE(PCB_REGS_X0, offsetof(struct proc, regs.x[0]));
 	DEFINE(PCB_REGS_X1, offsetof(struct proc, regs.x[1]));
 
+	//TODO 2018-2-6
+	/* struct pcb_regs */
+	DEFINE(UREGS_SP, offsetof(struct pcb_regs, sp));
+	DEFINE(UREGS_X0, offsetof(struct pcb_regs, x[0]));
+	DEFINE(UREGS_X1, offsetof(struct pcb_regs, x[1]));
+
 	/* struct thread_user_mode_rec */
 	DEFINE(THREAD_USER_MODE_REC_EXIT_STATUS0_PTR,
 		offsetof(struct thread_user_mode_rec, exit_status0_ptr));

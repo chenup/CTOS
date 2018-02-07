@@ -194,6 +194,9 @@ void thread_std_smc_entry(void);
 //TODO 2018-2-3
 void proc_entry(void);
 
+//TODO 2018-2-6
+struct cpu_local* get_cpu_local(void);
+
 struct thread_core_local *thread_get_core_local(void);
 
 /*
@@ -205,6 +208,9 @@ struct thread_core_local *thread_get_core_local(void);
  * in the flags field in the thread context.
  */
 void thread_resume(struct thread_ctx_regs *regs);
+
+//TODO 2018-2-6
+void proc_resume(struct pcb_regs *regs);
 
 //TODO 2018-2-3
 int call_resume(struct pcb_regs *regs, uint32_t spsr);

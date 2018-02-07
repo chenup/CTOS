@@ -480,7 +480,7 @@ optee mutex 2018-1-31
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee proc structure 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
-######phase 1######
+######phase 1###### 2018-2-6
 \optee_os\core\arch\arm\include\kernel\
 + proc.h
 
@@ -493,14 +493,19 @@ optee proc structure 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee message 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
-######phase 1######
+######phase 1###### 2018-2-6
 \optee_os\core\arch\arm\include\kernel\
 + ipc.h
+
+######phase 2######
+\optee_os\core\arch\arm\include\kernel\ipc.h
+-> #define P_SENDING (1 << 0) 
+-> #define P_RECVING (1 << 1)
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee schedule on proc 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
-######phase 1######
+######phase 1###### 2018-2-6
 \optee_os\core\arch\arm\kernel\thread_private.h
 -> int call_resume(struct pcb_regs *regs, uint32_t spsr);
 
@@ -512,10 +517,37 @@ optee schedule on proc 2018-2-2
 -> DEFINE(PCB_REGS_X0, offsetof(struct proc, regs.x[0]));
 -> DEFINE(PCB_REGS_X1, offsetof(struct proc, regs.x[1]));
 
+######phase 2######
+\optee_os\core\arch\arm\include\kernel\proc.h
+-> #define P_DELIEVE (1 << 0)
+-> #define P_INTER (1 << 1)
+-> void proc_schedule(void);
+
+\optee_os\core\arch\arm\kernel\thread_private.h
+-> void proc_resume(struct pcb_regs *regs);
+
+\optee_os\core\arch\arm\kernel\thread_a64.S
+-> FUNC proc_resume {...} END_FUNC proc_resume
+
+\optee_os\core\arch\arm\kernel\asm-defines.c
+-> DEFINE(UREGS_SP, offsetof(struct pcb_regs, sp));
+-> DEFINE(UREGS_X0, offsetof(struct pcb_regs, x[0]));
+-> DEFINE(UREGS_X1, offsetof(struct pcb_regs, x[1]));
+
+\optee_os\core\arch\arm\kernel\proc.c
+-> proc_schedule(); (void proc_clr_boot(void) {...})
+-> void proc_schedule(void) {...}
+
+\optee_os\core\arch\arm\kernel\thread.c
+-> struct cpu_local *get_cpu_local(void) {...}
+
+\optee_os\core\arch\arm\kernel\thread_private.h
+-> struct cpu_local* get_cpu_local(void);
+
 ++++++++++++++++++++++++++++++++++++++++++++++++
-optee process load 2018-2-2
+optee process elf load 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
-######phase 1######
+######phase 1###### 2018-2-6
 \optee_os\core\arch\arm\kernel\generic_entry_a64.S
 -> bl proc_clr_boot (FUNC _start {...} END_FUNC _start)
 
@@ -621,6 +653,17 @@ optee process load 2018-2-2
 \optee_os\core\include\mm\tee_mmu_types.h
 -> struct run_info { ... };
 -> #define TEE_NUM_PARAMS  4 (?)
+
+######phase 2######
+\optee_os\ta\arch\arm\user_ta_header.c
+-> void __tee_utee_entry(void) __noreturn;
+-> .entry.ptr64 = (uint64_t)__tee_utee_entry, (const struct ta_head ta_head __section(".ta_head") = {...})
+
+\optee_os\lib\libutee\tee_api_private.h
+-> void __tee_utee_entry(void);
+
+\optee_os\lib\libutee\arch\arm\user_ta_entry.c
+-> void __noreturn __tee_utee_entry(void) {...}
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee work left
