@@ -228,3 +228,13 @@ void proc_schedule(void)
 		proc_resume(proc->uregs);
 	}
 }
+
+//TODO 2018-2-9
+struct proc *get_proc(void)
+{
+	struct cpu_local *cpu_l = get_cpu_local();
+	int cur = cpu_l->cur_proc;
+	if(cur >= 0 && cur < NUM_PROCS && procs[cur].p_endpoint == cur)
+		return &procs[cur];
+	return NULL;
+}

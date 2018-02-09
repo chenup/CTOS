@@ -45,6 +45,15 @@
 		madd	x\res, x\tmp0, x\tmp1, x\res
 	.endm
 
+	//TODO 2018-2-9
+	.macro get_proc cpu_local, res, tmp0, tmp1
+		ldr	w\tmp0, [\cpu_local, \
+				#CPU_LOCAL_CUR_PROC]
+		adr	x\res, procs 
+		mov	x\tmp1, #PROC_SIZE
+		madd	x\res, x\tmp0, x\tmp1, x\res
+	.endm
+
 	.section .text.thread_asm
 LOCAL_FUNC vector_std_smc_entry , :
 	sub	sp, sp, #THREAD_SMC_ARGS_SIZE
@@ -180,7 +189,7 @@ END_FUNC thread_resume
 
 //TODO 2018-2-3
 FUNC proc_entry , :
-	mov x21, x30
+	//mov x21, x30
 	bl	tee_ta_exec
 
 	mov sp, x19
@@ -394,6 +403,44 @@ KEEP_PAGER thread_init_vbar
  *
  */
 
+//REX 2018-2-8
+FUNC __test_enter_user_mode , :
+	sub	sp, sp, #THREAD_USER_MODE_REC_SIZE
+	/*
+	 * Switch to SP_EL1
+	 * Disable exceptions
+	 * Save kern sp in x19
+	 */
+	msr	daifset, #DAIFBIT_ALL
+	mov	x19, sp
+	msr	spsel, #1
+
+	/*
+	 * Save the kernel stack pointer in the thread context
+	 */
+	/* get pointer to current thread context */
+	get_thread_ctx sp, 21, 20, 22
+	/*
+	 * Save kernel stack pointer to ensure that el0_svc() uses
+	 * correct stack pointer
+	 */
+	str	x19, [x21, #THREAD_CTX_KERN_SP]
+
+	/*
+	 * Initialize SPSR, ELR_EL1, and SP_EL0 to enter user mode
+	 */
+	msr	spsr_el1, x2
+	/* Set user sp */
+	msr	sp_el0, x0	/* Used when running TA in Aarch64 */
+	/* Set user function */
+	msr	elr_el1, x1
+	/* Set frame pointer (user stack can't be unwound past this point) */
+	mov x29, #0
+
+	/* Jump into user mode */
+	eret
+END_FUNC __test_enter_user_mode
+
 FUNC __thread_enter_user_mode , :
 	ldr	x8, [sp]
 	/*
@@ -588,7 +635,25 @@ SErrorA32:
 
 END_FUNC thread_vect_table
 
+//TODO 2018-2-9
 LOCAL_FUNC el0_svc , :
+//REX
+	get_proc sp, 0, 1, 2
+	ldr	x3, [x0, #PROC_UREGS]
+	mrs x1, sp_el0
+	mrs x2, elr_el1
+	stp x1, x2, [x3, #UREGS_SP]
+	mrs x1, spsr_el1
+	str x1, [x3, #UREGS_SPSR]
+	store_xregs x3, UREGS_X4, 4, 30
+	load_xregs sp, CPU_LOCAL_X0, 4, 7 
+	store_xregs x3, UREGS_X0, 4, 7
+	msr spsel, #0
+	mov sp, x3
+	msr	daifclr, #(DAIFBIT_FIQ | DAIFBIT_ABT | DAIFBIT_DBG)
+	bl	sn_tee_svc_handler
+
+//OLD
 	/* get pointer to current thread context in x0 */
 	get_thread_ctx sp, 0, 1, 2
 	/* load saved kernel sp */

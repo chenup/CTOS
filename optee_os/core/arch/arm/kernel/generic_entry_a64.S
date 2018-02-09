@@ -51,7 +51,9 @@
 		ldr	x0, [x0]
 		msr	spsel, #0
 		add	sp, x1, x0
-		bl	thread_get_core_local
+		//TODO 2018-2-9
+		//bl	thread_get_core_local
+		bl get_cpu_local
 		msr	spsel, #1
 		mov	sp, x0
 		msr	spsel, #0

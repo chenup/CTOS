@@ -215,6 +215,11 @@ void proc_resume(struct pcb_regs *regs);
 //TODO 2018-2-3
 int call_resume(struct pcb_regs *regs, uint32_t spsr);
 
+//REX 2018-2-8
+uint32_t __test_enter_user_mode(unsigned long user_sp,
+		unsigned long user_func, unsigned long spsr);
+
+
 uint32_t __thread_enter_user_mode(unsigned long a0, unsigned long a1,
 		unsigned long a2, unsigned long a3, unsigned long user_sp,
 		unsigned long user_func, unsigned long spsr,

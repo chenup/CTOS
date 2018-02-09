@@ -550,6 +550,7 @@ static TEE_Result param_mem_to_user_va(struct user_ta_ctx *utc,
 	return TEE_ERROR_GENERIC;
 }
 
+
 TEE_Result tee_mmu_map_param(struct user_ta_ctx *utc,
 		struct tee_ta_param *param, void *param_va[TEE_NUM_PARAMS])
 {

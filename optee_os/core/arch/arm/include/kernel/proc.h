@@ -62,4 +62,7 @@ int proc_alloc_and_run(void *ta);
 
 //TODO 2018-2-6
 void proc_schedule(void);
+
+//TODO 2018-2-9
+struct proc *get_proc(void);
 #endif

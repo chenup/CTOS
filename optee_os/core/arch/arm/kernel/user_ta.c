@@ -305,9 +305,9 @@ static TEE_Result sn_load_elf(struct proc *proc, struct shdr *shdr)
 	res = sn_elf_load_body(elf_state, sn_tee_mmu_get_load_addr(run));
 	if (res != TEE_SUCCESS)
 		goto out;
-
+	/*
 	ta_head = (struct ta_head*)sn_tee_mmu_get_load_addr(run);
-	run->entry = ta_head->entry.ptr64;
+	run->entry = ta_head->entry.ptr64;*/
 	/*
 	 * Replace the init attributes with attributes used when the TA is
 	 * running.
@@ -396,6 +396,7 @@ TEE_Result tee_ta_load(struct shdr *signed_ta, struct proc *proc)
 {
 	TEE_Result res;
 	uaddr_t usr_stack;
+	struct ta_head *ta_head;
 	struct run_info *run = &proc->run_info;
 
 	res = sn_load_elf(proc, signed_ta);
@@ -404,7 +405,12 @@ TEE_Result tee_ta_load(struct shdr *signed_ta, struct proc *proc)
 
 	sn_tee_mmu_set_ctx(proc);
     proc->uregs->spsr = read_daif() & (SPSR_64_DAIF_MASK << SPSR_64_DAIF_SHIFT);
-	usr_stack = (uaddr_t)sn_tee_mmu_get_load_addr(run) + run->mobj_stack->size;
+	usr_stack = (uaddr_t)(run->mmu->regions[0].va) + run->mobj_stack->size;
+
+	ta_head = (struct ta_head*)sn_tee_mmu_get_load_addr(run);
+	run->entry = ta_head->entry.ptr64;
+	
+	proc->uregs->x[29] = 0;
 	proc->uregs->sp = usr_stack;
 	proc->uregs->pc = run->entry;
 	DMSG("ELF load address 0x%x", (uint32_t)sn_tee_mmu_get_load_addr(run));

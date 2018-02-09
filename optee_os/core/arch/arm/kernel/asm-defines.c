@@ -99,6 +99,10 @@ DEFINES
 	DEFINE(UREGS_SP, offsetof(struct pcb_regs, sp));
 	DEFINE(UREGS_X0, offsetof(struct pcb_regs, x[0]));
 	DEFINE(UREGS_X1, offsetof(struct pcb_regs, x[1]));
+	//TODO 2018-2-9
+	DEFINE(UREGS_X4, offsetof(struct pcb_regs, x[4]));
+	//TODO 2018-2-9
+	DEFINE(UREGS_SPSR, offsetof(struct pcb_regs, spsr));
 
 	/* struct thread_user_mode_rec */
 	DEFINE(THREAD_USER_MODE_REC_EXIT_STATUS0_PTR,
@@ -118,5 +122,18 @@ DEFINES
 		offsetof(struct thread_core_local, abt_stack_va_end));
 	DEFINE(THREAD_CORE_LOCAL_X0, offsetof(struct thread_core_local, x[0]));
 	DEFINE(THREAD_CORE_LOCAL_X2, offsetof(struct thread_core_local, x[2]));
+
+	//TODO 2018-2-9
+	/* struct proc */
+	DEFINE(PROC_KSTACK, offsetof(struct proc, k_stack));
+	DEFINE(PROC_UREGS, offsetof(struct proc, uregs));
+	DEFINE(PROC_SIZE, sizeof(struct proc));
+
+	//TODO 2018-2-9
+	/* struct cpu_local */
+	DEFINE(CPU_LOCAL_X0, offsetof(struct cpu_local, x[0]));
+	DEFINE(CPU_LOCAL_X2, offsetof(struct cpu_local, x[2]));
+	DEFINE(CPU_LOCAL_CUR_PROC, offsetof(struct cpu_local, cur_proc));
+	DEFINE(CPU_LOCAL_TMP_STACK, offsetof(struct cpu_local, tmp_stack));
 #endif /*ARM64*/
 }

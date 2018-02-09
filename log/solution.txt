@@ -490,6 +490,9 @@ optee proc structure 2018-2-2
 \optee_os\core\arch\arm\kernel\sub.mk
 -> srcs-y += proc.c
 
+\optee_os\core\arch\arm\kernel\generic_entry_a64.S
+-> bl get_cpu_local (.macro set_sp {...} .endm)
+
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee message 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
@@ -503,7 +506,7 @@ optee message 2018-2-2
 -> #define P_RECVING (1 << 1)
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
-optee schedule on proc 2018-2-2
+optee process elf run 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
 ######phase 1###### 2018-2-6
 \optee_os\core\arch\arm\kernel\thread_private.h
@@ -533,6 +536,7 @@ optee schedule on proc 2018-2-2
 -> DEFINE(UREGS_SP, offsetof(struct pcb_regs, sp));
 -> DEFINE(UREGS_X0, offsetof(struct pcb_regs, x[0]));
 -> DEFINE(UREGS_X1, offsetof(struct pcb_regs, x[1]));
+-> DEFINE(PROC_KSTACK, offsetof(struct proc, k_stack));
 
 \optee_os\core\arch\arm\kernel\proc.c
 -> proc_schedule(); (void proc_clr_boot(void) {...})
@@ -664,6 +668,37 @@ optee process elf load 2018-2-2
 
 \optee_os\lib\libutee\arch\arm\user_ta_entry.c
 -> void __noreturn __tee_utee_entry(void) {...}
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee svc 2018-2-9
+++++++++++++++++++++++++++++++++++++++++++++++++
+######phase 1######
+\optee_os\core\arch\arm\kernel\thread_a64.S
+-> LOCAL_FUNC el0_svc {...} END_FUNC el0_svc
+-> .macro get_proc cpu_local, res, tmp0, tmp1 {...} .endm
+
+\optee_os\core\arch\arm\kernel\proc.c
+-> struct proc *get_proc(void) {...}
+
+\optee_os\core\arch\arm\include\kernel\proc.h
+-> struct proc *get_proc(void);
+
+\optee_os\core\arch\arm\kernel\asm-defines.c
+-> DEFINE(CPU_LOCAL_X0, offsetof(struct cpu_local, x[0]));
+-> DEFINE(CPU_LOCAL_X2, offsetof(struct cpu_local, x[2]));
+-> DEFINE(CPU_LOCAL_CUR_PROC, offsetof(struct cpu_local, cur_proc));
+-> DEFINE(CPU_LOCAL_TMP_STACK, offsetof(struct cpu_local, tmp_stack));
+-> DEFINE(PROC_UREGS, offsetof(struct proc, uregs));
+-> DEFINE(PROC_SIZE, sizeof(struct proc));
+-> DEFINE(UREGS_SPSR, offsetof(struct pcb_regs, spsr));
+-> DEFINE(UREGS_X4, offsetof(struct pcb_regs, x[4]));
+
+\optee_os\core\arch\arm\include\tee\arch_svc.h
+-> struct proc;
+-> void sn_tee_svc_handler(struct proc *proc);
+
+\optee_os\core\arch\arm\tee\arch_svc.c
+-> void sn_tee_svc_handler(struct proc *proc) {...}
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee work left

@@ -29,7 +29,13 @@
 
 struct thread_svc_regs;
 
+//TODO 2018-2-9
+struct proc;
+
 void tee_svc_handler(struct thread_svc_regs *regs);
+
+//TODO 2018-2-9
+void sn_tee_svc_handler(struct proc *proc);
 
 /*
  * Called from the assembly functions syscall_sys_return() and
