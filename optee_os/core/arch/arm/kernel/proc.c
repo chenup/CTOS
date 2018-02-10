@@ -118,12 +118,12 @@ void proc_clr_boot(void)
 	res = proc_alloc((void*)0x6100000ul);
 	if(res != 0)
 	{
-		DMSG("proc_alloc_and_run error!\n");
+		DMSG("proc_alloc error!\n");
 	}
 	res = proc_alloc((void*)0x61226c4ul);
 	if(res != 0)
 	{
-		DMSG("proc_alloc_and_run error!\n");
+		DMSG("proc_alloc_and error!\n");
 	}
 	//TODO 2018-2-6
 	proc_schedule();
@@ -176,7 +176,10 @@ int proc_alloc(void *ta)
 	 */
 	proc->regs.x[0] = (uint64_t)ta;
 	proc->regs.x[1] = (uint64_t)n;
+	/* Set up frame pointer as per the Aarch64 AAPCS */
+	proc->regs.x[29] = 0;
 
+	//thread_lazy_save_ns_vfp();
 	return call_resume(&procs[n].regs, spsr);
 }
 
@@ -238,3 +241,24 @@ struct proc *get_proc(void)
 		return &procs[cur];
 	return NULL;
 }
+
+//TODO 2018-2-10
+int enqueue(struct proc* p) 
+{
+	struct list_head *lh;
+	struct list_head *lp;
+
+	if(p == NULL || p->p_rts_flags != 0)
+	{
+		return -1;
+	}
+
+	lh = &run_queues[p->p_prio];
+	lp = &p->link;
+	lp->prev = lh->prev;
+	lp->prev->next = lp;
+	lp->next = lh;
+	lh->prev = lp;
+	return 0;
+}
+

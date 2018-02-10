@@ -511,15 +511,13 @@ static TEE_Result tee_ta_init_session_with_context(struct tee_ta_ctx *ctx,
 
 //2018-2-5
 extern struct proc procs[];
-extern struct list_head run_queues[];
+//extern struct list_head run_queues[];
 
 //TODO 2018-2-3
 TEE_Result tee_ta_exec(void* ta_addr, size_t pn)
 {
 	TEE_Result res;
 	struct proc *proc = &procs[pn];
-	struct list_head *lh;
-	struct list_head *lp;
 
     res = tee_ta_load(ta_addr, proc);
 
@@ -527,14 +525,8 @@ TEE_Result tee_ta_exec(void* ta_addr, size_t pn)
 		DMSG("tee_ta_load failed 0x%x", res);
 		return res;
 	}
-
-	lh = &run_queues[proc->p_prio];
-	lp = &proc->link;
-	lp->prev = lh->prev;
-	lp->next = lh;
-	lp->prev->next = lp;
-	lh->prev = lp;
-	//res = sn_ta_enter(proc);
+	//TODO 2018-2-10
+	res = enqueue(proc);
 	return res;
 }
 

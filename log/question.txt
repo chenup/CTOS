@@ -1,0 +1,36 @@
+procs[n].p_endpoint = n;
+
+spsr |= read_daif();
+
+struct proc { ... };
+
+for(i = 0; i < NUM_PROCS; i++) 
+{
+	procs[i].k_stack = GET_STACK(stack_proc[i]);
+	procs[i].uregs = (void*)(procs[i].k_stack - sizeof(struct pcb_regs));
+	procs[i].p_endpoint = -1;
+	SLIST_INIT(&procs[i].pgt_cache);
+}
+
+call_resume { eret }
+
+sn_ta_enter(proc);
+
+->
+free(state->ehdr);
+free(state->phdr);
+free(state->ta_head); <-
+free(state->shdr);
+free(state);
+
+tee_ta_load()
+{
+	sn_tee_mmu_set_ctx(proc);
+}
+
+proc_entry , :
+	mov x21, x30
+
+proc->p_misc_flags & P_DELIEVE
+
+proc->regs.x[29] = 0;

@@ -65,4 +65,7 @@ void proc_schedule(void);
 
 //TODO 2018-2-9
 struct proc *get_proc(void);
+
+//TODO 2018-2-10
+int enqueue(struct proc *p);
 #endif

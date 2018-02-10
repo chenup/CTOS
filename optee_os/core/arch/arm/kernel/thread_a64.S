@@ -190,34 +190,13 @@ END_FUNC thread_resume
 //TODO 2018-2-3
 FUNC proc_load_entry , :
 	bl	tee_ta_exec
+
 	mov sp, x19
 	msr spsr_el1, x20
 	load_xregs sp, 0, 19, 30
 	add sp, sp, #96 // free memory for gregs x19..x30
 	msr elr_el1, x30
 	eret
-	/*
-	 * Load the returned x0-x3 into preserved registers and skip the
-	 * "returned" x4-x7 since they will not be returned to normal
-	 * world.
-	 */
-	load_xregs sp, THREAD_SMC_ARGS_X0, 20, 23
-	add	sp, sp, #THREAD_SMC_ARGS_SIZE
-
-	/* Mask all maskable exceptions before switching to temporary stack */
-	msr	daifset, #DAIFBIT_ALL
-	bl	thread_get_tmp_sp
-	mov	sp, x0
-
-	bl	thread_state_free
-
-	ldr	x0, =TEESMC_OPTEED_RETURN_CALL_DONE
-	mov	x1, x20
-	mov	x2, x21
-	mov	x3, x22
-	mov	x4, x23
-	smc	#0
-	b	.	/* SMC should not return */
 END_FUNC proc_load_entry
 
 /* TODO */
@@ -402,44 +381,6 @@ KEEP_PAGER thread_init_vbar
  *               uint32_t *exit_status0, uint32_t *exit_status1)
  *
  */
-
-//REX 2018-2-8
-FUNC __test_enter_user_mode , :
-	//sub	sp, sp, #THREAD_USER_MODE_REC_SIZE
-	/*
-	 * Switch to SP_EL1
-	 * Disable exceptions
-	 * Save kern sp in x19
-	 */
-	msr	daifset, #DAIFBIT_ALL
-	mov	x19, sp
-	msr	spsel, #1
-
-	/*
-	 * Save the kernel stack pointer in the thread context
-	 */
-	/* get pointer to current thread context */
-	get_thread_ctx sp, 21, 20, 22
-	/*
-	 * Save kernel stack pointer to ensure that el0_svc() uses
-	 * correct stack pointer
-	 */
-	str	x19, [x21, #THREAD_CTX_KERN_SP]
-
-	/*
-	 * Initialize SPSR, ELR_EL1, and SP_EL0 to enter user mode
-	 */
-	msr	spsr_el1, x2
-	/* Set user sp */
-	msr	sp_el0, x0	/* Used when running TA in Aarch64 */
-	/* Set user function */
-	msr	elr_el1, x1
-	/* Set frame pointer (user stack can't be unwound past this point) */
-	mov x29, #0
-
-	/* Jump into user mode */
-	eret
-END_FUNC __test_enter_user_mode
 
 FUNC __thread_enter_user_mode , :
 	ldr	x8, [sp]

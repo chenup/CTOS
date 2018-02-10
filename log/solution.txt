@@ -500,7 +500,7 @@ optee message 2018-2-2
 \optee_os\core\arch\arm\include\kernel\
 + ipc.h
 
-######phase 2######
+######phase 2###### 
 \optee_os\core\arch\arm\include\kernel\ipc.h
 -> #define P_SENDING (1 << 0) 
 -> #define P_RECVING (1 << 1)
@@ -520,7 +520,7 @@ optee process elf run 2018-2-2
 -> DEFINE(PCB_REGS_X0, offsetof(struct proc, regs.x[0]));
 -> DEFINE(PCB_REGS_X1, offsetof(struct proc, regs.x[1]));
 
-######phase 2######
+######phase 2###### 2018-2-10
 \optee_os\core\arch\arm\include\kernel\proc.h
 -> #define P_DELIEVE (1 << 0)
 -> #define P_INTER (1 << 1)
@@ -658,7 +658,7 @@ optee process elf load 2018-2-2
 -> struct run_info { ... };
 -> #define TEE_NUM_PARAMS  4 (?)
 
-######phase 2######
+######phase 2###### 2018-2-10
 \optee_os\ta\arch\arm\user_ta_header.c
 -> void __tee_utee_entry(void) __noreturn;
 -> .entry.ptr64 = (uint64_t)__tee_utee_entry, (const struct ta_head ta_head __section(".ta_head") = {...})
@@ -672,7 +672,7 @@ optee process elf load 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee svc 2018-2-9
 ++++++++++++++++++++++++++++++++++++++++++++++++
-######phase 1######
+######phase 1###### 2018-2-10
 \optee_os\core\arch\arm\kernel\thread_a64.S
 -> LOCAL_FUNC el0_svc {...} END_FUNC el0_svc
 -> .macro get_proc cpu_local, res, tmp0, tmp1 {...} .endm
@@ -706,6 +706,28 @@ optee svc 2018-2-9
 
 \optee_os\core\arch\arm\tee\arch_svc_private.h
 -> uint32_t sn_tee_svc_do_call(struct proc *proc, syscall_t func);
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee printf 2018-2-10
+++++++++++++++++++++++++++++++++++++++++++++++++
+######phase 1######
+\optee_os\core\arch\arm\kernel\user_ta.c
+-> vfp_enable(); (tee_ta_load {...})
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee proc schedule 2018-2-10
+++++++++++++++++++++++++++++++++++++++++++++++++
+######phase 1######
+\optee_os\core\kernel\tee_ta_manager.c
+-> res = enqueue(proc); (tee_ta_exec {...})
+-> //extern struct list_head run_queues[];
+
+\optee_os\core\arch\arm\kernel\proc.c
+-> int enqueue(struct proc* p) {...}
+
+\optee_os\core\arch\arm\include\kernel\proc.h
+-> int enqueue(struct proc *p);
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee work left

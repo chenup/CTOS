@@ -404,7 +404,9 @@ TEE_Result tee_ta_load(struct shdr *signed_ta, struct proc *proc)
 		goto error_return;
 
 	sn_tee_mmu_set_ctx(proc);
+    
     proc->uregs->spsr = read_daif() & (SPSR_64_DAIF_MASK << SPSR_64_DAIF_SHIFT);
+	
 	usr_stack = (uaddr_t)(run->mmu->regions[0].va) + run->mobj_stack->size;
 
 	ta_head = (struct ta_head*)sn_tee_mmu_get_load_addr(run);
@@ -413,6 +415,9 @@ TEE_Result tee_ta_load(struct shdr *signed_ta, struct proc *proc)
 	proc->uregs->x[29] = 0;
 	proc->uregs->sp = usr_stack;
 	proc->uregs->pc = run->entry;
+	//TODO 2018-2-10
+	/* CPACR_EL1, Architectural Feature Access Control Register */
+	vfp_enable();
 	DMSG("ELF load address 0x%x", (uint32_t)sn_tee_mmu_get_load_addr(run));
 
 	//tee_mmu_set_ctx(NULL);
