@@ -192,7 +192,7 @@ void thread_init_vbar(void);
 void thread_std_smc_entry(void);
 
 //TODO 2018-2-3
-void proc_entry(void);
+void proc_load_entry(void);
 
 //TODO 2018-2-6
 struct cpu_local* get_cpu_local(void);

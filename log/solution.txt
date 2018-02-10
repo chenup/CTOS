@@ -559,11 +559,11 @@ optee process elf load 2018-2-2
 -> #include "thread_private.h"
 -> static void init_proc(void) {...}
 -> void proc_clr_boot(void) {...}
--> int proc_alloc_and_run(void *ta) {...}
+-> int proc_alloc(void *ta) {...}
 
 \optee_os\core\arch\arm\include\kernel\proc.h
 -> void proc_clr_boot(void);
--> int proc_alloc_and_run(void *ta);
+-> int proc_alloc(void *ta);
 
 \optee_os\core\arch\arm\kernel\thread.c
 -> #include <kernel/proc.h>
@@ -575,10 +575,10 @@ optee process elf load 2018-2-2
 -> void init_cpu_locals(void);
 
 \optee_os\core\arch\arm\kernel\thread_private.h
--> void proc_entry(void);
+-> void proc_load_entry(void);
 
 \optee_os\core\arch\arm\kernel\thread_a64.S
--> FUNC proc_entry {...} END_FUNC proc_entry
+-> FUNC proc_load_entry {...} END_FUNC proc_load_entry
 
 \optee_os\core\include\kernel\tee_ta_manager.h
 -> TEE_Result tee_ta_exec(void* ta_addr, size_t pn);
@@ -698,7 +698,14 @@ optee svc 2018-2-9
 -> void sn_tee_svc_handler(struct proc *proc);
 
 \optee_os\core\arch\arm\tee\arch_svc.c
+-> #include <kernel/proc.h>
 -> void sn_tee_svc_handler(struct proc *proc) {...}
+
+\Clos\optee_os\core\arch\arm\tee\arch_svc_a64.S
+-> FUNC sn_tee_svc_do_call {...} END_FUNC sn_tee_svc_do_call
+
+\optee_os\core\arch\arm\tee\arch_svc_private.h
+-> uint32_t sn_tee_svc_do_call(struct proc *proc, syscall_t func);
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee work left

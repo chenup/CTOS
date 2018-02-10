@@ -42,6 +42,8 @@
 
 #include "arch_svc_private.h"
 
+//TODO 2018-2-9
+#include <kernel/proc.h>
 #if (TRACE_LEVEL == TRACE_FLOW) && defined(CFG_TEE_CORE_TA_TRACE)
 #define TRACE_SYSCALLS
 #endif
@@ -199,31 +201,27 @@ static void set_svc_retval(struct thread_svc_regs *regs, uint64_t ret_val)
 //TODO 2018-2-9
 void sn_tee_svc_handler(struct proc *proc)
 {
-	//size_t scn;
-	//syscall_t scf;
-
-	DMSG("SNOW here\n");
-	//COMPILE_TIME_ASSERT(ARRAY_SIZE(tee_svc_syscall_table) ==
-			//	(TEE_SCN_MAX + 1));
+	size_t scn;
+	syscall_t scf;
+	COMPILE_TIME_ASSERT(ARRAY_SIZE(tee_svc_syscall_table) ==
+				(TEE_SCN_MAX + 1));
 
 	//thread_user_save_vfp();
-
 	/* TA has just entered kernel mode */
 	//tee_ta_update_session_utime_suspend();
 
 	/* Restore foreign interrupts which are disabled on exception entry */
 	//thread_restore_foreign_intr();
-	/*
-	scn = proc->uregs->x[8];
 
+	scn = proc->uregs->x[8];
+	//trace_syscall(scn);
 	if (scn > TEE_SCN_MAX)
 		scf = syscall_not_supported;
 	else
 		scf = tee_svc_syscall_table[scn].fn;
 
-	//DMSG("svc do call\n");
 	proc->uregs->x[0] = sn_tee_svc_do_call(proc, scf);
-	//DMSG("svc do call ok\n");
+	/*
 	if(proc->p_rts_flags == 0)
 		enqueue_head(proc);
 	sn_sched();

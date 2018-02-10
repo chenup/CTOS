@@ -115,12 +115,12 @@ void proc_clr_boot(void)
 	int res;
 	init_cpu_locals();
 	init_proc();
-	res = proc_alloc_and_run((void*)0x6100000ul);
+	res = proc_alloc((void*)0x6100000ul);
 	if(res != 0)
 	{
 		DMSG("proc_alloc_and_run error!\n");
 	}
-	res = proc_alloc_and_run((void*)0x61226c4ul);
+	res = proc_alloc((void*)0x61226c4ul);
 	if(res != 0)
 	{
 		DMSG("proc_alloc_and_run error!\n");
@@ -130,7 +130,7 @@ void proc_clr_boot(void)
 }
 
 //TODO 2018-2-3
-int proc_alloc_and_run(void *ta)
+int proc_alloc(void *ta)
 {
 	size_t n;
 	bool found_proc = false;
@@ -158,7 +158,7 @@ int proc_alloc_and_run(void *ta)
 	}
 
 	proc = &procs[n];
-	proc->regs.pc = (uint64_t)proc_entry;
+	proc->regs.pc = (uint64_t)proc_load_entry;
 
 	/*
 	 * Stdcalls starts in SVC mode with masked foreign interrupts, masked

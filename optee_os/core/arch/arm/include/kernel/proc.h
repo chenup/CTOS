@@ -58,7 +58,7 @@ struct proc {
 void proc_clr_boot(void);
 
 //TODO 2018-2-3
-int proc_alloc_and_run(void *ta);
+int proc_alloc(void *ta);
 
 //TODO 2018-2-6
 void proc_schedule(void);

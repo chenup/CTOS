@@ -54,6 +54,17 @@ struct sc_rec {
  *
  * Called from tee_svc_handler()
  */
+
+//TODO 2018-2-9
+FUNC sn_tee_svc_do_call , :
+	sub sp, sp, #16
+	str x30, [sp, #0]
+	blr x1
+	ldr x30, [sp, #0]
+	add sp, sp, #16
+	ret
+END_FUNC sn_tee_svc_do_call
+
 FUNC tee_svc_do_call , :
 	sub	sp, sp, #SC_REC_SIZE
 	stp	x0, x1, [sp, #SC_REC_X0]

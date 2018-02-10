@@ -52,7 +52,7 @@
 		msr	spsel, #0
 		add	sp, x1, x0
 		//TODO 2018-2-9
-		//bl	thread_get_core_local
+		//bl thread_get_core_local
 		bl get_cpu_local
 		msr	spsel, #1
 		mov	sp, x0

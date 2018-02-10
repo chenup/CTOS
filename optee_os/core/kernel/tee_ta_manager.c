@@ -521,7 +521,6 @@ TEE_Result tee_ta_exec(void* ta_addr, size_t pn)
 	struct list_head *lh;
 	struct list_head *lp;
 
-	//assert(pn >= 0);
     res = tee_ta_load(ta_addr, proc);
 
 	if (res != TEE_SUCCESS) {

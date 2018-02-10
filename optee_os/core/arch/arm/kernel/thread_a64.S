@@ -188,10 +188,8 @@ FUNC thread_resume , :
 END_FUNC thread_resume
 
 //TODO 2018-2-3
-FUNC proc_entry , :
-	//mov x21, x30
+FUNC proc_load_entry , :
 	bl	tee_ta_exec
-
 	mov sp, x19
 	msr spsr_el1, x20
 	load_xregs sp, 0, 19, 30
@@ -220,7 +218,7 @@ FUNC proc_entry , :
 	mov	x4, x23
 	smc	#0
 	b	.	/* SMC should not return */
-END_FUNC proc_entry
+END_FUNC proc_load_entry
 
 /* TODO */
 FUNC sn_thread_std_smc_entry , :
@@ -289,10 +287,12 @@ FUNC thread_std_smc_entry , :
 	b	.	/* SMC should not return */
 END_FUNC thread_std_smc_entry
 
-//TODO 2018-2-6
+//TODO 2018-2-10
 /* void proc_resume(struct pcb_regs *regs) */
 FUNC proc_resume , :
 	load_xregs x0, UREGS_SP, 1, 3
+	msr	daifset, #DAIFBIT_ALL
+	msr	spsel, #1
 	mov	sp, x1
 	msr	elr_el1, x2
 	msr	spsr_el1, x3
@@ -405,7 +405,7 @@ KEEP_PAGER thread_init_vbar
 
 //REX 2018-2-8
 FUNC __test_enter_user_mode , :
-	sub	sp, sp, #THREAD_USER_MODE_REC_SIZE
+	//sub	sp, sp, #THREAD_USER_MODE_REC_SIZE
 	/*
 	 * Switch to SP_EL1
 	 * Disable exceptions
@@ -637,6 +637,27 @@ END_FUNC thread_vect_table
 
 //TODO 2018-2-9
 LOCAL_FUNC el0_svc , :
+//new
+	get_proc sp, 0, 1, 2
+	ldr	x3, [x0, #PROC_UREGS]
+	mrs x1, sp_el0
+	mrs x2, elr_el1
+	stp x1, x2, [x3, #UREGS_SP]
+	mrs x1, spsr_el1
+	str x1, [x3, #UREGS_SPSR]
+	store_xregs x3, UREGS_X4, 4, 30
+	load_xregs sp, CPU_LOCAL_X0, 4, 7 
+	store_xregs x3, UREGS_X0, 4, 7
+	msr spsel, #0
+	mov sp, x3
+#if defined(CFG_ARM_GICV3)
+	msr	daifclr, #(DAIFBIT_IRQ | DAIFBIT_ABT | DAIFBIT_DBG)
+#else
+	msr	daifclr, #(DAIFBIT_FIQ | DAIFBIT_ABT | DAIFBIT_DBG)
+#endif
+
+	/* Call the handler */
+	bl	sn_tee_svc_handler
 //REX
 	get_proc sp, 0, 1, 2
 	ldr	x3, [x0, #PROC_UREGS]

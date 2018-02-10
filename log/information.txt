@@ -743,7 +743,16 @@ TAILQ_INSERT_TAIL(mutexes, m, link) do {			\
 	(mutexes)->tqh_last = &(m)->link.tqe_next;			\
 } while (/* CONSTCOND */0)
 
+++++++++++++++++++++++++++++++++++++++++++++++++
+OPTEE enter user mode 
+++++++++++++++++++++++++++++++++++++++++++++++++
+__test_thread_enter_user_mode:
+kerenl: sp_el0
 
+x19: sp_el0
+sp->sp_el1
+sp_el1: cpu_local
+x21: procs[n]
 
 
 
