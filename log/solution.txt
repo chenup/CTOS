@@ -548,7 +548,7 @@ optee process elf run 2018-2-2
 \optee_os\core\arch\arm\kernel\thread_private.h
 -> struct cpu_local* get_cpu_local(void);
 
-######phase 3###### 
+######phase 3###### 2018-2-11
 \optee_os\lib\libutee\arch\arm\user_ta_entry.c
 -> void __noreturn __tee_utee_entry(void) {...}
 -> static TEE_Result user_main(void) {...}
@@ -730,7 +730,7 @@ optee svc 2018-2-9
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee printf 2018-2-10
 ++++++++++++++++++++++++++++++++++++++++++++++++
-######phase 1######
+######phase 1###### 2018-2-11
 \optee_os\core\arch\arm\kernel\user_ta.c
 -> vfp_enable(); (tee_ta_load {...})
 
@@ -748,7 +748,7 @@ optee printf 2018-2-10
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee proc schedule 2018-2-10
 ++++++++++++++++++++++++++++++++++++++++++++++++
-######phase 1######
+######phase 1###### 2018-2-11
 \optee_os\core\kernel\tee_ta_manager.c
 -> res = enqueue(proc); (tee_ta_exec {...})
 -> //extern struct list_head run_queues[];
