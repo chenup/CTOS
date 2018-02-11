@@ -46,4 +46,5 @@ void sn_tee_svc_handler(struct proc *proc);
 uint32_t tee_svc_sys_return_helper(uint32_t ret, bool panic,
 			uint32_t panic_code, struct thread_svc_regs *regs);
 
+
 #endif /*TEE_ARCH_SVC_H*/

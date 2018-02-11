@@ -269,6 +269,13 @@ END_FUNC thread_std_smc_entry
 //TODO 2018-2-10
 /* void proc_resume(struct pcb_regs *regs) */
 FUNC proc_resume , :
+//REX
+	msr	spsel, #1
+	get_proc sp, 21, 20, 22
+	str	x30, [x21, #UREGS_X30]
+	msr	spsel, #0
+	mov	x20, sp
+	str x20, [x21, #UREGS_SP]
 	load_xregs x0, UREGS_SP, 1, 3
 	msr	daifset, #DAIFBIT_ALL
 	mov	sp, x1

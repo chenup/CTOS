@@ -101,6 +101,7 @@ DEFINES
 	DEFINE(UREGS_X0, offsetof(struct pcb_regs, x[0]));
 	DEFINE(UREGS_X1, offsetof(struct pcb_regs, x[1]));
 	DEFINE(UREGS_X3, offsetof(struct pcb_regs, x[3]));
+	DEFINE(UREGS_X30, offsetof(struct pcb_regs, x[30]));
 	//TODO 2018-2-9
 	DEFINE(UREGS_X4, offsetof(struct pcb_regs, x[4]));
 	//TODO 2018-2-9

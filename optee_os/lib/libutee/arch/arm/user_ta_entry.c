@@ -210,10 +210,20 @@ static TEE_Result entry_invoke_command(unsigned long session_id,
 	__utee_from_param(up, param_types, params);
 	return res;
 }
+//TODO 2018-2-11
+static TEE_Result user_main(void)
+{
+	trace_ext_puts("user_main\n");
+	return TEE_SUCCESS;
+}
 
 //TODO 2018-2-6
 void __noreturn __tee_utee_entry(void)
 {
+	TEE_Result res;
+	res = user_main();
+	utee_return(res);
+	/*
 	unsigned num = 0;
 	while(1) 
 	{
@@ -222,6 +232,7 @@ void __noreturn __tee_utee_entry(void)
 		}
 		num += 1;
 	}
+	*/
 	/*
 	unsigned num = 0;
 	int temp = 0;

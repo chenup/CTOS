@@ -60,6 +60,9 @@ struct tee_vendor_props {
 };
 void syscall_sys_return(unsigned long ret);
 
+//TODO 2018-2-11
+void sn_syscall_sys_return(struct proc *proc);
+
 void syscall_log(const void *buf, size_t len);
 
 //TODO 2018-2-10

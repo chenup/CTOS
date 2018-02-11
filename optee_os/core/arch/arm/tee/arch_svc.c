@@ -65,7 +65,8 @@ struct syscall_entry {
  * This array is ordered according to the SYSCALL ids TEE_SCN_xxx
  */
 static const struct syscall_entry tee_svc_syscall_table[] = {
-	SYSCALL_ENTRY(syscall_sys_return),
+	//SYSCALL_ENTRY(syscall_sys_return),
+	SYSCALL_ENTRY(sn_syscall_sys_return),
 	//SYSCALL_ENTRY(syscall_log),
 	SYSCALL_ENTRY(sn_syscall_log),
 	SYSCALL_ENTRY(syscall_panic),
@@ -309,4 +310,5 @@ uint32_t tee_svc_sys_return_helper(uint32_t ret, bool panic,
 	regs->sp_el0 = (uint64_t)(regs + 1);
 	return ret;
 }
+
 #endif /*ARM64*/
