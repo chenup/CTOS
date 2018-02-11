@@ -37,6 +37,9 @@ extern vaddr_t tee_svc_uref_base;
 
 struct tee_ta_session;
 
+//TODO 2018-2-10
+struct proc;
+
 /* TA Properties */
 struct tee_props {
 	const char *name;
@@ -58,6 +61,9 @@ struct tee_vendor_props {
 void syscall_sys_return(unsigned long ret);
 
 void syscall_log(const void *buf, size_t len);
+
+//TODO 2018-2-10
+int sn_syscall_log(struct proc *proc);
 
 void syscall_panic(unsigned long code);
 

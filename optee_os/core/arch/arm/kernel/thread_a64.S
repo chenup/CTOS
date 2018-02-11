@@ -271,7 +271,6 @@ END_FUNC thread_std_smc_entry
 FUNC proc_resume , :
 	load_xregs x0, UREGS_SP, 1, 3
 	msr	daifset, #DAIFBIT_ALL
-	msr	spsel, #1
 	mov	sp, x1
 	msr	elr_el1, x2
 	msr	spsr_el1, x3
@@ -516,7 +515,9 @@ SErrorSPx:
 	 */
 	.align	7
 el0_sync_a64:
-	store_xregs sp, THREAD_CORE_LOCAL_X0, 0, 3
+	//store_xregs sp, THREAD_CORE_LOCAL_X0, 0, 3
+	//TODO 2018-2-10
+	store_xregs sp, CPU_LOCAL_X0, 0, 3
 	mrs	x2, esr_el1
 	mrs	x3, sp_el0
 	lsr	x2, x2, #ESR_EC_SHIFT
@@ -599,6 +600,22 @@ LOCAL_FUNC el0_svc , :
 
 	/* Call the handler */
 	bl	sn_tee_svc_handler
+
+	msr	daifset, #DAIFBIT_ALL
+	msr	spsel, #1
+	get_proc sp, 0, 1, 2
+	ldr	x3, [x0, #PROC_UREGS]
+	/* Restore registers to the required state and return*/
+	ldr	x1, [x3, #UREGS_PC]
+	msr	elr_el1, x1
+	ldr	x1, [x3, #UREGS_SPSR]
+	msr	spsr_el1, x1
+	ldr	x1, [x3, #UREGS_SP]
+	msr	sp_el0, x1
+	load_xregs x3, UREGS_X0, 0, 2
+	load_xregs x3, UREGS_X4, 4, 30
+	ldr	x3, [x3, #UREGS_X3]
+	eret
 //REX
 	get_proc sp, 0, 1, 2
 	ldr	x3, [x0, #PROC_UREGS]

@@ -674,6 +674,7 @@ optee svc 2018-2-9
 ++++++++++++++++++++++++++++++++++++++++++++++++
 ######phase 1###### 2018-2-10
 \optee_os\core\arch\arm\kernel\thread_a64.S
+-> store_xregs sp, CPU_LOCAL_X0, 0, 3 (el0_sync_a64)
 -> LOCAL_FUNC el0_svc {...} END_FUNC el0_svc
 -> .macro get_proc cpu_local, res, tmp0, tmp1 {...} .endm
 
@@ -691,6 +692,8 @@ optee svc 2018-2-9
 -> DEFINE(PROC_UREGS, offsetof(struct proc, uregs));
 -> DEFINE(PROC_SIZE, sizeof(struct proc));
 -> DEFINE(UREGS_SPSR, offsetof(struct pcb_regs, spsr));
+-> DEFINE(UREGS_PC, offsetof(struct pcb_regs, pc));
+-> DEFINE(UREGS_X3, offsetof(struct pcb_regs, x[3]));
 -> DEFINE(UREGS_X4, offsetof(struct pcb_regs, x[4]));
 
 \optee_os\core\arch\arm\include\tee\arch_svc.h
@@ -714,6 +717,16 @@ optee printf 2018-2-10
 \optee_os\core\arch\arm\kernel\user_ta.c
 -> vfp_enable(); (tee_ta_load {...})
 
+\optee_os\core\tee\tee_svc.c
+-> int sn_syscall_log(struct proc *proc) {...}
+
+\optee_os\core\include\tee\tee_svc.h
+-> struct proc;
+-> int sn_syscall_log(struct proc *proc);
+
+\optee_os\core\arch\arm\tee\arch_svc.c
+-> //SYSCALL_ENTRY(syscall_log),
+-> SYSCALL_ENTRY(sn_syscall_log),
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee proc schedule 2018-2-10

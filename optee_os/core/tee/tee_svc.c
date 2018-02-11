@@ -73,6 +73,27 @@ void syscall_log(const void *buf __maybe_unused, size_t len __maybe_unused)
 #endif
 }
 
+//TODO 2018-2-10
+int sn_syscall_log(struct proc *proc)
+{
+	const void *buf = (void*)proc->uregs->x[0];
+	size_t len = proc->uregs->x[1];
+	char *kbuf;
+	DMSG("hello");
+	if (len == 0)
+		return 0;
+
+	kbuf = malloc(len + 1);
+	if (kbuf == NULL)
+		return -1;
+
+	memcpy(kbuf, buf, len);
+	kbuf[len] = '\0';
+	trace_ext_puts(kbuf);
+	free(kbuf);
+	return 0;
+}
+
 TEE_Result syscall_not_supported(void)
 {
 	return TEE_ERROR_NOT_SUPPORTED;

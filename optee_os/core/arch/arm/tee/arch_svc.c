@@ -66,7 +66,8 @@ struct syscall_entry {
  */
 static const struct syscall_entry tee_svc_syscall_table[] = {
 	SYSCALL_ENTRY(syscall_sys_return),
-	SYSCALL_ENTRY(syscall_log),
+	//SYSCALL_ENTRY(syscall_log),
+	SYSCALL_ENTRY(sn_syscall_log),
 	SYSCALL_ENTRY(syscall_panic),
 	SYSCALL_ENTRY(syscall_get_property),
 	SYSCALL_ENTRY(syscall_get_property_name_to_index),
