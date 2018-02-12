@@ -14,8 +14,12 @@
 
 //TODO 2018-2-6
 // p_misc_flags
-#define P_DELIEVE (1 << 0)
+#define P_DELIVE (1 << 0)
 #define P_INTER (1 << 1)
+
+//TODO 2018-2-6
+// p_getfrom
+#define PROC_ANY (-1)
 
 struct cpu_local {
 	vaddr_t tmp_stack;
@@ -42,17 +46,18 @@ struct proc {
     uint32_t p_priv; /* system privileges structure */
 	uint32_t p_rts_flags; /* process is runnable only if zero */
 	uint32_t p_misc_flags; /* flags that do not suspend the process */
+    uint32_t p_pending; /* bit map for pending kernel signals */
 	struct message p_sendmsg;
-	int p_sendto;	
+	int p_sendto;	/* to whom does process want to send? */
 	struct message p_recvmsg;	
-	int p_getfrom;
+	int p_getfrom; /* from whom does process want to receive? */
 	void* p_recvaddr;	
     struct run_info run_info;
     uint64_t k_stack;
 	struct proc* p_caller_q; /* head of list of procs wishing to send */
 	struct proc* p_q_link; /* link to next proc wishing to send */
 	struct list_head link;
-};
+} __aligned(16);
 
 //TODO 2018-2-3
 void proc_clr_boot(void);
@@ -68,4 +73,7 @@ struct proc *get_proc(void);
 
 //TODO 2018-2-10
 int enqueue(struct proc *p);
+
+//TODO 2018-2-12
+int enqueue_head(struct proc* p) 
 #endif

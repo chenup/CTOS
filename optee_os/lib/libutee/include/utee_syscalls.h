@@ -62,6 +62,14 @@ void utee_sn_test(void) __noreturn;
 
 //TODO
 void utee_sleep(void) __noreturn;
+
+//TODO 2018-2-12
+int utee_send(int who, void *msg);
+
+int utee_receive(int who, void *msg);
+
+int utee_sendrec(int who, void *msg);
+
 /* prop_set is TEE_PROPSET_xxx*/
 TEE_Result utee_get_property(unsigned long prop_set, unsigned long index,
 			     void *name, uint32_t *name_len,

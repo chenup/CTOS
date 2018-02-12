@@ -77,6 +77,14 @@ void syscall_sn_test(void) __noreturn;
 //TODO
 void syscall_sleep(void);
 
+//TODO 2018-2-12
+int syscall_send(struct proc *proc);
+int syscall_receive(struct proc *proc);
+int syscall_sendrec(struct proc *proc);
+
+//TODO 2018-2-12
+int sn_notify(int who);
+
 TEE_Result syscall_not_supported(void);
 
 /* prop_set defined by enum utee_property */

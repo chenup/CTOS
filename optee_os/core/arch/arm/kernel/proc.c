@@ -8,8 +8,11 @@
 #include <trace.h>
 #include <kernel/spinlock.h>
 #include <kernel/proc.h>
+
 //TODO 2018-2-3
 #include "thread_private.h"
+//TODO 2018-2-12
+#include <string.h>
 
 #ifdef CFG_WITH_ARM_TRUSTED_FW
 #define STACK_TMP_OFFS		0
@@ -215,19 +218,21 @@ void proc_schedule(void)
 	core_mmu_set_user_map(&map);
 
 	//message
-	/*
-	if(proc->p_misc_flags & P_DELIEVE) 
+	//TODO 2018-2-12
+	if(proc->p_misc_flags & P_DELIVE) 
 	{
 		memcpy(proc->p_recvaddr, (void*)&proc->p_recvmsg, sizeof(struct message));
-		proc->p_misc_flags &= (~P_DELIEVE);
+		proc->p_misc_flags &= (~P_DELIVE);
 		//DMSG("test %s\n", (proc->p_recvmsg).msg);
 	}
-	*/
 	//thread_lazy_save_ns_vfp();
-	if(proc->p_misc_flags & P_INTER) {
+	if(proc->p_misc_flags & P_INTER) 
+	{
 		proc->p_misc_flags &= (~P_INTER);
 		proc_resume(&(proc->regs));
-	} else{
+	} 
+	else
+	{
 		proc_resume(proc->uregs);
 	}
 }
@@ -243,6 +248,7 @@ struct proc *get_proc(void)
 }
 
 //TODO 2018-2-10
+// insert tail
 int enqueue(struct proc* p) 
 {
 	struct list_head *lh;
@@ -259,6 +265,14 @@ int enqueue(struct proc* p)
 	lp->prev->next = lp;
 	lp->next = lh;
 	lh->prev = lp;
+	return 0;
+}
+
+//TODO 2018-2-10
+// insert head
+int enqueue_head(struct proc* p) 
+{
+	
 	return 0;
 }
 

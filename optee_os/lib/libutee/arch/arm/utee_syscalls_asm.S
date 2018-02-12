@@ -193,3 +193,8 @@
 
         //TODO
         UTEE_SYSCALL utee_sleep, TEE_SCN_SLEEP, 0
+
+        //TODO 2018-2-12
+        UTEE_SYSCALL utee_send, TEE_SCN_SEND, 2
+        UTEE_SYSCALL utee_receive, TEE_SCN_RECEIVE, 2
+        UTEE_SYSCALL utee_sendrec, TEE_SCN_SENDREC, 2

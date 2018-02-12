@@ -9,10 +9,18 @@
 #define P_SENDING (1 << 0) 
 #define P_RECVING (1 << 1)
 
+//TODO 2018-2-12
+#define M_TYPE_NOTIFY 1
+
 struct message {
-	int from;
-	int to;
-	char msg[64];
+    int from;
+    int to;
+    int type;
+    union {
+        char msg[64];
+        uint64_t ts;
+		int mp_pid;
+    } u;
 };
 
 #endif
