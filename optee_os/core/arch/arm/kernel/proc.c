@@ -276,3 +276,52 @@ int enqueue_head(struct proc* p)
 	return 0;
 }
 
+//TODO 2018-2-13
+int proc_fork(struct proc *proc)
+{
+	size_t n;
+	bool found_proc = false;
+	struct proc* p_ch;
+	TEE_Result res;
+	int mp_id = proc->uregs->x[0];
+
+	if(mp_id < 0 || procs[mp_id].p_endpoint != mp_id)
+	{
+		return -1;
+	}
+	proc = &procs[mp_id];
+
+	lock_global();
+	for (n = 0; n < NUM_PROCS; n++) 
+	{
+		if (procs[n].p_endpoint == -1) 
+		{
+			procs[n].p_endpoint = n;
+			found_proc = true;
+			break;
+		}
+	}
+	unlock_global();
+
+	if (!found_proc) 
+	{
+		DMSG("\nproc alloc error!\n");
+		return -1;
+	}
+
+	p_ch = &procs[n];
+
+	p_ch->p_prio = proc->p_prio;
+	*(p_ch->uregs) = *(proc->uregs);
+	p_ch->p_rts_flags = proc->p_rts_flags;
+	p_ch->p_getfrom = proc->p_getfrom;
+	p_ch->p_recvaddr = proc->p_recvaddr;
+	res = ta_copy(proc, p_ch);
+	if(res != TEE_SUCCESS) 
+	{
+		DMSG("\nta_copy error!\n");
+		return -1;
+	}
+	return n;
+}
+

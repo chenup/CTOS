@@ -85,6 +85,9 @@ int syscall_sendrec(struct proc *proc);
 //TODO 2018-2-12
 int sn_notify(int who);
 
+//TODO 2018-2-12
+int syscall_fork(struct proc *proc);
+
 TEE_Result syscall_not_supported(void);
 
 /* prop_set defined by enum utee_property */

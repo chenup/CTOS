@@ -184,10 +184,14 @@ static uint64_t l1_xlation_table[CFG_TEE_CORE_NB_CORE][NUM_L1_ENTRIES]
 static uint64_t xlat_tables[MAX_XLAT_TABLES][XLAT_TABLE_ENTRIES]
 	__aligned(XLAT_TABLE_SIZE) __section(".nozi.mmu.l2");
 
+//TODO 2018-2-13
 /* MMU L2 table for TAs, one for each thread */
+/*
 static uint64_t xlat_tables_ul1[CFG_NUM_THREADS][XLAT_TABLE_ENTRIES]
 	__aligned(XLAT_TABLE_SIZE) __section(".nozi.mmu.l2");
-
+*/
+static uint64_t xlat_tables_ul1[NUM_PROCS][XLAT_TABLE_ENTRIES]
+	__aligned(XLAT_TABLE_SIZE) __section(".nozi.mmu.l2");
 
 static unsigned int next_xlat;
 static uint64_t tcr_ps_bits;

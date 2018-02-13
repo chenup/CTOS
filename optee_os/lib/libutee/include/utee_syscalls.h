@@ -70,6 +70,9 @@ int utee_receive(int who, void *msg);
 
 int utee_sendrec(int who, void *msg);
 
+//TODO 2018-2-12
+int pm_fork(int mp_id);
+
 /* prop_set is TEE_PROPSET_xxx*/
 TEE_Result utee_get_property(unsigned long prop_set, unsigned long index,
 			     void *name, uint32_t *name_len,

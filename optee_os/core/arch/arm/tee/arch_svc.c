@@ -146,6 +146,8 @@ static const struct syscall_entry tee_svc_syscall_table[] = {
 	SYSCALL_ENTRY(syscall_send),
 	SYSCALL_ENTRY(syscall_receive),
 	SYSCALL_ENTRY(syscall_sendrec),
+	//TODO 2018-2-12
+	SYSCALL_ENTRY(syscall_fork),
 };
 
 #ifdef TRACE_SYSCALLS

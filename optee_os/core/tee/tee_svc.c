@@ -1481,3 +1481,9 @@ int sn_notify(int who)
 	//DMSG("SNOW I am here\n");
 	return 0;
 }
+
+//TODO 2018-2-12
+int syscall_fork(struct proc *proc) 
+{
+	return proc_fork(proc);
+}

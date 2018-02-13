@@ -111,4 +111,6 @@ TEE_Result sn_tee_ta_init_user_ta_session(const TEE_UUID *uuid, struct tee_ta_se
 
 //TODO 2018-2-3
 TEE_Result tee_ta_load(struct shdr *signed_ta, struct proc *proc);
+//TODO 2018-2-13
+TEE_Result ta_copy(struct proc *proc, struct proc *p_ch);
 #endif /*KERNEL_USER_TA_H*/

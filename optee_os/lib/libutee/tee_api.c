@@ -342,3 +342,16 @@ TEE_Result TEE_CacheInvalidate(char *buf, size_t len)
 {
 	return utee_cache_operation(buf, len, TEE_CACHEINVALIDATE);
 }
+
+//TODO 2018-2-13
+int fork(void) 
+{
+	struct message msg;
+	int res;
+	msg.type = M_TYPE_FORK;
+	res = utee_sendrec(0, &msg);
+	if(res == 0)
+		return msg.u.mp_pid;
+	else
+		return -1;
+}

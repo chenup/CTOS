@@ -76,4 +76,7 @@ int enqueue(struct proc *p);
 
 //TODO 2018-2-12
 int enqueue_head(struct proc* p) 
+
+//TODO 2018-2-13
+int proc_fork(struct proc *proc);
 #endif

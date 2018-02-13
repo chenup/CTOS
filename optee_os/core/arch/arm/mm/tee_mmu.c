@@ -905,9 +905,7 @@ TEE_Result tee_mmu_check_access_rights(const struct user_ta_ctx *utc,
 }
 //TODO 2018-2-4
 void sn_tee_mmu_set_ctx(struct proc *proc)
-{
-
-	//sn_pgt_free(&proc->pgt_cache);		
+{		
 	if(proc) {
 		struct core_mmu_user_map user_map = {0};
 		sn_core_mmu_create_user_map(proc);

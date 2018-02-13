@@ -11,6 +11,8 @@
 
 //TODO 2018-2-12
 #define M_TYPE_NOTIFY 1
+//TODO 2018-2-12
+#define M_TYPE_FORK 2
 
 struct message {
     int from;

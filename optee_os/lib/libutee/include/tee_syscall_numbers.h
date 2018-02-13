@@ -108,8 +108,10 @@
 #define TEE_SCN_RECEIVE 74
 #define TEE_SCN_SENDREC 75
 
+//TODO 2018-2-12 
+#define TEE_SCN_FORK 76
 //TODO 2018-2-12
-#define TEE_SCN_MAX 75
+#define TEE_SCN_MAX 76
 
 //#define TEE_SCN_MAX 71
 //#define TEE_SCN_MAX				70

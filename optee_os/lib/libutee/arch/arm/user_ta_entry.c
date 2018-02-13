@@ -38,6 +38,8 @@
 #include <malloc.h>
 #include "tee_api_private.h"
 
+//TODO 2018-2-13
+#include <printk.h>
 /*
  * Pull in symbol __utee_mcount.
  * This symbol is implemented in assembly in its own compilation unit, and is
@@ -210,54 +212,91 @@ static TEE_Result entry_invoke_command(unsigned long session_id,
 	__utee_from_param(up, param_types, params);
 	return res;
 }
-//TODO 2018-2-11
+//TODO 2018-2-13
 static TEE_Result user_main(void)
 {
-	trace_ext_puts("user_main\n");
-	return TEE_SUCCESS;
-}
-
-//TODO 2018-2-6
-void __noreturn __tee_utee_entry(void)
-{
-	TEE_Result res;
-	res = user_main();
-	utee_return(res);
-	/*
-	unsigned num = 0;
-	while(1) 
-	{
-		if(num % (64*1024*1024) == 0 ) {
-			trace_ext_puts("HHHHHHHHHHHHHHHHHHHHHHH");
-		}
-		num += 1;
-	}
-	*/
-	/*
 	unsigned num = 0;
 	int temp = 0;
-	struct user_msg msg;
-
-	msg.msg[0] = 'a';
-	msg.msg[1] = '\n';
-	msg.msg[2] = 0;
+	int res = fork();
+	if(res < 0)
+		trace_ext_puts("fork error!\n");
+	else if(res == 0)
+		trace_ext_puts("This is process 1: I am father\n");
+	else
+		printf("This is process %d: I am child\n", res);
 	while(1) 
 	{
-		if(num % (64*1024*1024) == 0 && temp<5) {
-			trace_ext_puts("process A:I sendrec a msg to 1:");
-			msg.msg[0] += 1;
-			trace_ext_puts(msg.msg);
-			if(sn_sendrec(1, &msg) != 0) {
-				trace_ext_puts("send error\n");
-			}else {
-				trace_ext_puts("process A:sendrec suc:");
-				trace_ext_puts(msg.msg);
-			}
+		if(res == 0)
+		{
+			res = 1;
+		}
+		if(num % (64 * 1024 * 1024) == 0 && temp < 5) {
+			printf("hello res %d\n", res);
 			temp++;
 		}
 		num += 1;
 	}
-	*/
+	return TEE_SUCCESS;
+}
+
+//TODO 2018-2-13
+struct mproc 
+{
+	uint32_t mp_num;	
+	int mp_endpoint;
+	int mp_father;
+};
+
+//TODO 2018-2-13
+struct mproc mprocs[16];
+
+//TODO 2018-2-13
+static TEE_Result pm_main(void)
+{
+	struct message msg;
+	int res;
+
+	trace_ext_puts("This is PM, I am waiting for message\n");
+	mprocs[0].mp_endpoint = 0;
+	mprocs[1].mp_endpoint = 1;
+	while(1) {
+		res = utee_receive(-1, &msg);
+		if(res != 0) 
+		{
+			trace_ext_puts("PM receive error!\n");
+			continue;
+		}
+		if(msg.type == M_TYPE_FORK) 
+		{
+			printf("PM:I got a FORK msg form %d\n", msg.from);
+			res = pm_fork(msg.from);
+			if(res < 0)
+			{
+				msg.u.mp_pid = -1;
+			}
+			else
+			{
+				msg.u.mp_pid = 0;
+			}
+			utee_send(msg.from, &msg);
+			if(res >= 0) 
+			{
+				msg.u.mp_pid = res;
+				utee_send(res, &msg);
+			}
+		}
+	}
+	return TEE_SUCCESS;
+}
+
+//TODO 2018-2-11
+void __noreturn __tee_utee_entry(void)
+{
+	TEE_Result res;
+	res = user_main();
+	//TODO 2018-2-13
+	//res = pm_main();
+	utee_return(res);
 }
 
 void __noreturn __utee_entry(unsigned long func, unsigned long session_id,

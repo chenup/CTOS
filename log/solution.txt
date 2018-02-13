@@ -1,31 +1,31 @@
 ++++++++++++++++++++++++++++++++++++++++++++++++
 Generic Secure Timer aarch64
 ++++++++++++++++++++++++++++++++++++++++++++++++
-\optee_os-master\core\arch\arm\kernel\generic_boot.c
+\optee_os\core\arch\arm\kernel\generic_boot.c
 -> __weak void generic_s_timer_start(void){}
 -> generic_s_timer_start();
 
-\optee_os-master\core\arch\arm\plat-vexpress\main.c
+\optee_os\core\arch\arm\plat-vexpress\main.c
 -> void generic_s_timer_start(void){}
 -> #ifdef IT_SECURE_TIMER {...} #endif
 
-\optee_os-master\core\arch\arm\include\kernel\generic_boot.h
+\optee_os\core\arch\arm\include\kernel\generic_boot.h
 -> void generic_s_timer_start(void);
 
-\optee_os-master\core\arch\arm\include\arm64.h
+\optee_os\core\arch\arm\include\arm64.h
 -> DEFINE_U64_REG_READ_FUNC(cntpct_el0)
 -> DEFINE_U64_REG_READ_FUNC(cntfrq_el0)
 -> DEFINE_U64_REG_READ_FUNC(cntps_ctl_el1)
 -> DEFINE_U64_REG_WRITE_FUNC(cntps_cval_el1)
 -> DEFINE_U64_REG_WRITE_FUNC(cntps_ctl_el1)
 
-\optee_os-master\core\arch\arm\plat-vexpress\platform_config.h
+\optee_os\core\arch\arm\plat-vexpress\platform_config.h
 -> #define IT_SECURE_TIMER 29
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 Generic Secure Timer aarch32
 ++++++++++++++++++++++++++++++++++++++++++++++++
-\optee_os-master\core\arch\arm\include\arm32.h
+\optee_os\core\arch\arm\include\arm32.h
 -> static inline void write_cntp_cval(uint64_t cval)
 -> static inline void write_cntfrq(uint32_t frq)
 -> static inline uint32_t read_cntp_ctl(void)
@@ -33,7 +33,7 @@ Generic Secure Timer aarch32
 ++++++++++++++++++++++++++++++++++++++++++++++++
 Static TA
 ++++++++++++++++++++++++++++++++++++++++++++++++
-\optee_os-master\core\arch\arm\pta\
+\optee_os\core\arch\arm\pta\
 + sta_filter.c
 ~\sub.mk
 -> #srcs-$(CFG_TEE_CORE_EMBED_INTERNAL_TESTS) += sta_filter.c
@@ -696,6 +696,8 @@ optee process elf load 2018-2-2
 \optee_os\core\arch\arm\mm\core_mmu_lpae.c
 -> void sn_core_mmu_create_user_map(struct proc *proc) {...}
 -> void sn_core_mmu_get_user_pgdir(struct core_mmu_table_info *pgd_info, struct proc *proc) {...}
+-> static uint64_t xlat_tables_ul1[NUM_PROCS][XLAT_TABLE_ENTRIES] rex
+-> //static uint64_t xlat_tables_ul1[CFG_NUM_THREADS][XLAT_TABLE_ENTRIES] rex
 
 \optee_os\core\arch\arm\mm\core_mmu_private.h
 -> void sn_core_mmu_populate_user_map(struct core_mmu_table_info *dir_info, struct proc *proc);
@@ -715,7 +717,7 @@ optee process elf load 2018-2-2
 -> struct run_info { ... };
 -> #define TEE_NUM_PARAMS  4 (?)
 
-######phase 2###### 2018-2-10
+######phase 2###### 2018-2-13
 \optee_os\ta\arch\arm\user_ta_header.c
 -> void __tee_utee_entry(void) __noreturn;
 -> .entry.ptr64 = (uint64_t)__tee_utee_entry, (const struct ta_head ta_head __section(".ta_head") = {...})
@@ -725,6 +727,18 @@ optee process elf load 2018-2-2
 
 \optee_os\lib\libutee\arch\arm\user_ta_entry.c
 -> void __noreturn __tee_utee_entry(void) {...}
+
+\optee_os\core\arch\arm\mm\pgt_cache.c
+-> static struct pgt *sn_pop_from_free_list(void) {...} rex
+-> static void sn_push_to_free_list(struct pgt *p) {...} rex
+
+\optee_os\core\include\mm\tee_mm.h
+-> void* get_page(unsigned int num); rex
+-> void free_page(void* addr); rex
+
+\optee_os\core\arch\arm\mm\tee_mm.c
+-> void* get_page(unsigned int num) {...} rex
+-> void free_page(void* addr) {...} rex
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee svc 2018-2-9
@@ -786,6 +800,13 @@ optee printf 2018-2-10
 -> //SYSCALL_ENTRY(syscall_log),
 -> SYSCALL_ENTRY(sn_syscall_log),
 
+######phase 2######
+\optee_os\lib\libutee\arch\arm\user_ta_entry.c
+-> #include <printk.h>
+
+\optee_os\lib\libutils\ext\snprintk.c
+-> #include <trace.h>
+
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee proc schedule 2018-2-10
 ++++++++++++++++++++++++++++++++++++++++++++++++
@@ -802,11 +823,77 @@ optee proc schedule 2018-2-10
 
 ######phase 2###### 
 \optee_os\core\arch\arm\kernel\proc.c
--> int enqueue_head(struct proc* p) {...}
+-> int enqueue_head(struct proc* p) {...} rex
 
 \optee_os\core\arch\arm\include\kernel\proc.h
 -> int enqueue_head(struct proc *p);
 
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee fork 2018-2-12
+++++++++++++++++++++++++++++++++++++++++++++++++
+######phase 1###### 
+\optee_os\core\include\tee\tee_svc.h
+-> int syscall_fork(struct proc *proc);
+
+\optee_os\core\tee\tee_svc.c
+-> int syscall_fork(struct proc *proc) {...}
+
+\optee_os\core\arch\arm\tee\arch_svc.c
+-> SYSCALL_ENTRY(syscall_fork),
+
+\optee_os\core\arch\arm\include\kernel\ipc.h
+-> #define M_TYPE_FORK 2
+
+\optee_os\lib\libutee\arch\arm\utee_syscalls_asm.S
+-> UTEE_SYSCALL pm_fork, TEE_SCN_FORK, 1
+
+\optee_os\lib\libutee\include\utee_syscalls.h
+-> int pm_fork(int mp_id);
+
+\optee_os\lib\libutee\include\tee_syscall_numbers.h
+-> #define TEE_SCN_FORK 76
+-> #define TEE_SCN_MAX 76
+
+\optee_os\lib\libutee\arch\arm\user_ta_entry.c
+-> static TEE_Result user_main(void) {...}
+-> struct mproc {...};
+-> struct mproc mprocs[16];
+-> res = pm_main(); (__tee_utee_entry {...})
+-> static TEE_Result pm_main(void) {...}
+
+\optee_os\lib\libutee\tee_api.c
+-> int fork(void) {...}
+
+\optee_os\core\arch\arm\include\kernel\proc.h
+-> int proc_fork(struct proc *proc);
+
+\optee_os\core\arch\arm\kernel\proc.c
+-> int proc_fork(struct proc *proc) {...}
+
+\optee_os\core\arch\arm\include\kernel\user_ta.h
+-> TEE_Result ta_copy(struct proc *proc, struct proc *p_ch);
+
+\optee_os\core\arch\arm\kernel\user_ta.c
+-> static void mobj_copy(struct mobj *mdst, struct mobj *msrc) {...}
+-> TEE_Result ta_copy(struct proc *proc, struct proc *p_ch) {...}
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee memcpy asm 2018-2-13
+++++++++++++++++++++++++++++++++++++++++++++++++
+\optee_os\lib\libutils\isoc\arch\arm\
++ phys_copy.S
+
+\optee_os\lib\libutils\isoc\arch\arm\sub.mk
+-> srcs-$(CFG_ARM64_$(sm)) += phys_copy.S
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+optee memset asm 2018-2-13
+++++++++++++++++++++++++++++++++++++++++++++++++
+\optee_os\lib\libutils\isoc\arch\arm\
++ phys_set.S
+
+\optee_os\lib\libutils\isoc\arch\arm\sub.mk
+-> srcs-$(CFG_ARM64_$(sm)) += phys_set.S
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee work left

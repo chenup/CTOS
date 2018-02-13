@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2014, STMicroelectronics International N.V.
  * Copyright (c) 2015-2017 Linaro Limited
@@ -889,5 +890,75 @@ TEE_Result sn_tee_ta_init_user_ta_session(const TEE_UUID *uuid,
 	res = sn_ta_load(uuid, sn_user_ta_store, &s->ctx);
 	if (res == TEE_SUCCESS)
 		s->ctx->ops = &user_ta_ops;
+	return res;
+}
+
+//TODO 2018-2-13
+static void mobj_copy(struct mobj *mdst, struct mobj *msrc) 
+{
+	size_t size = msrc->size;
+	void *src = mobj_get_va(msrc, 0); 
+	void *dst = mobj_get_va(mdst, 0); 
+	if(src == NULL || dst == NULL) 
+	{
+		DMSG("\nmobj_copy error!\n\n");
+		return;
+	}
+	memcpy(dst, src, size);
+}
+
+//TODO 2018-2-13
+TEE_Result ta_copy(struct proc *proc, struct proc *p_ch)
+{
+	struct run_info *run = &proc->run_info;
+	struct run_info *run_ch = &p_ch->run_info;
+	size_t size;
+	TEE_Result res;
+	int i;
+	void *va;
+
+	size = run->mobj_code->size;
+	run_ch->mobj_code = alloc_ta_mem(size);
+    if (!run_ch->mobj_code) 
+    {
+        res = TEE_ERROR_OUT_OF_MEMORY;
+        goto out;
+    }
+	mobj_copy(run_ch->mobj_code, run->mobj_code);
+
+	size = run->mobj_stack->size;
+	run_ch->mobj_stack = alloc_ta_mem(size);
+    if (!run_ch->mobj_stack) {
+        res = TEE_ERROR_OUT_OF_MEMORY;
+        goto out;
+    }
+	mobj_copy(run_ch->mobj_stack, run->mobj_stack);
+
+    run_ch->mmu = calloc(1, sizeof(struct tee_mmu_info));
+
+    if(!run_ch->mmu) 
+    {
+        res = TEE_ERROR_OUT_OF_MEMORY;
+        goto out;
+    }
+	memcpy(run_ch->mmu, run->mmu, sizeof(struct tee_mmu_info));
+	
+	run_ch->mmu->regions[0].mobj = run_ch->mobj_stack;
+	for(i = 1; i < TEE_MMU_UMAP_MAX_ENTRIES; i++) 
+	{
+		if(run_ch->mmu->regions[i].size != 0)
+		{
+			run_ch->mmu->regions[i].mobj = run_ch->mobj_code;
+		}
+	}
+
+	sn_tee_mmu_set_ctx(p_ch);
+
+	va = (void*)run_ch->mmu->ta_private_vmem_start;
+	size = run_ch->mmu->ta_private_vmem_end - run_ch->mmu->ta_private_vmem_start;
+    cache_op_inner(DCACHE_AREA_CLEAN, va, size);
+    cache_op_inner(ICACHE_AREA_INVALIDATE, va, size);
+	return 0;
+out:
 	return res;
 }

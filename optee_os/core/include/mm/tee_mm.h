@@ -136,4 +136,7 @@ void tee_mm_get_pool_stats(tee_mm_pool_t *pool, struct malloc_stats *stats,
 			   bool reset);
 #endif
 
+//TODO 2018-2-13
+void* get_page(unsigned int num);
+void free_page(void* addr);
 #endif

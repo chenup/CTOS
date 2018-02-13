@@ -386,3 +386,21 @@ uintptr_t tee_mm_get_smem(const tee_mm_entry_t *mm)
 {
 	return (mm->offset << mm->pool->shift) + mm->pool->lo;
 }
+
+//TODO 2018-2-13
+void* get_page(unsigned int num)
+{
+	tee_mm_entry_t *mm = tee_mm_alloc(&tee_mm_sec_ddr, num*SMALL_PAGE_SIZE);
+	if(mm != NULL)
+		return (void*)((mm->offset << mm->pool->shift) + mm->pool->lo);
+	else
+		return NULL;
+}
+
+//TODO 2018-2-13
+void free_page(void* addr)
+{
+	tee_mm_entry_t *mm = tee_mm_find(&tee_mm_sec_ddr, (paddr_t)addr);
+	if(mm != NULL)
+		tee_mm_free(mm);
+}

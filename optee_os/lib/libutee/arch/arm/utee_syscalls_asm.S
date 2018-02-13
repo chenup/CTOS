@@ -198,3 +198,6 @@
         UTEE_SYSCALL utee_send, TEE_SCN_SEND, 2
         UTEE_SYSCALL utee_receive, TEE_SCN_RECEIVE, 2
         UTEE_SYSCALL utee_sendrec, TEE_SCN_SENDREC, 2
+        
+        //TODO 2018-2-12
+        UTEE_SYSCALL pm_fork, TEE_SCN_FORK, 1
