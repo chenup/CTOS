@@ -71,9 +71,6 @@
 #include <stdarg.h>
 #include <printk.h>
 
-//TODO 2018-2-13
-#include <trace.h>
-
 /* flags for kprintf */
 #define TOCONS        0x0001	/* to the console */
 #define TOTTY        0x0002	/* to the process' tty */

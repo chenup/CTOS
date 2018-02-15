@@ -715,7 +715,7 @@ optee process elf load 2018-2-2
 
 \optee_os\core\include\mm\tee_mmu_types.h
 -> struct run_info { ... };
--> #define TEE_NUM_PARAMS  4 (?)
+-> #define TEE_NUM_PARAMS  4
 
 ######phase 2###### 2018-2-13
 \optee_os\ta\arch\arm\user_ta_header.c
@@ -729,16 +729,17 @@ optee process elf load 2018-2-2
 -> void __noreturn __tee_utee_entry(void) {...}
 
 \optee_os\core\arch\arm\mm\pgt_cache.c
--> static struct pgt *sn_pop_from_free_list(void) {...} rex
--> static void sn_push_to_free_list(struct pgt *p) {...} rex
+-> static struct pgt *sn_pop_from_free_list(void) {...}
+-> static void sn_push_to_free_list(struct pgt *p) {...}
 
 \optee_os\core\include\mm\tee_mm.h
--> void* get_page(unsigned int num); rex
--> void free_page(void* addr); rex
+-> void* get_page(unsigned int num); 
+-> void free_page(void* addr); 
 
 \optee_os\core\arch\arm\mm\tee_mm.c
--> void* get_page(unsigned int num) {...} rex
--> void free_page(void* addr) {...} rex
+-> #include <mm/core_mmu.h>
+-> void* get_page(unsigned int num) {...}
+-> void free_page(void* addr) {...}
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee svc 2018-2-9
@@ -800,13 +801,6 @@ optee printf 2018-2-10
 -> //SYSCALL_ENTRY(syscall_log),
 -> SYSCALL_ENTRY(sn_syscall_log),
 
-######phase 2######
-\optee_os\lib\libutee\arch\arm\user_ta_entry.c
--> #include <printk.h>
-
-\optee_os\lib\libutils\ext\snprintk.c
--> #include <trace.h>
-
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee proc schedule 2018-2-10
 ++++++++++++++++++++++++++++++++++++++++++++++++
@@ -848,6 +842,7 @@ optee fork 2018-2-12
 -> UTEE_SYSCALL pm_fork, TEE_SCN_FORK, 1
 
 \optee_os\lib\libutee\include\utee_syscalls.h
+-> int fork(void);
 -> int pm_fork(int mp_id);
 
 \optee_os\lib\libutee\include\tee_syscall_numbers.h
@@ -858,10 +853,11 @@ optee fork 2018-2-12
 -> static TEE_Result user_main(void) {...}
 -> struct mproc {...};
 -> struct mproc mprocs[16];
--> res = pm_main(); (__tee_utee_entry {...})
--> static TEE_Result pm_main(void) {...}
+-> static void pm_main(void) {...}
+-> pm_main(); (__tee_utee_entry {...})
 
 \optee_os\lib\libutee\tee_api.c
+-> #include <tee_ipc.h>
 -> int fork(void) {...}
 
 \optee_os\core\arch\arm\include\kernel\proc.h
@@ -876,6 +872,9 @@ optee fork 2018-2-12
 \optee_os\core\arch\arm\kernel\user_ta.c
 -> static void mobj_copy(struct mobj *mdst, struct mobj *msrc) {...}
 -> TEE_Result ta_copy(struct proc *proc, struct proc *p_ch) {...}
+
+\optee_os\lib\libutee\include\
++ tee_ipc.h
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee memcpy asm 2018-2-13

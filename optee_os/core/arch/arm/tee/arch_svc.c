@@ -227,13 +227,14 @@ void sn_tee_svc_handler(struct proc *proc)
 		scf = syscall_not_supported;
 	else
 		scf = tee_svc_syscall_table[scn].fn;
-
+	
 	proc->uregs->x[0] = sn_tee_svc_do_call(proc, scf);
-	/*
+	
 	if(proc->p_rts_flags == 0)
+	{
 		enqueue_head(proc);
-	sn_sched();
-	*/
+	}
+	proc_schedule();
 }
 
 

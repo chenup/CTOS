@@ -139,6 +139,8 @@ void pgt_init(void)
 	}
 }
 #endif
+
+/*
 //TODO 2018-2-13
 static struct pgt *sn_pop_from_free_list(void)
 {
@@ -154,6 +156,7 @@ static void sn_push_to_free_list(struct pgt *p)
 	free_page(p->tbl);
 	free(p);
 }
+*/
 
 #if defined(CFG_WITH_LPAE) || !defined(CFG_WITH_PAGER)
 static struct pgt *pop_from_free_list(void)

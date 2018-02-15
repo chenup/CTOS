@@ -35,6 +35,9 @@
 #include <mm/tee_mm.h>
 #include <mm/tee_pager.h>
 
+//TODO 2018-2-14
+#include <mm/core_mmu.h>
+
 bool tee_mm_init(tee_mm_pool_t *pool, paddr_t lo, paddr_t hi, uint8_t shift,
 		 uint32_t flags)
 {
@@ -390,7 +393,7 @@ uintptr_t tee_mm_get_smem(const tee_mm_entry_t *mm)
 //TODO 2018-2-13
 void* get_page(unsigned int num)
 {
-	tee_mm_entry_t *mm = tee_mm_alloc(&tee_mm_sec_ddr, num*SMALL_PAGE_SIZE);
+	tee_mm_entry_t *mm = tee_mm_alloc(&tee_mm_sec_ddr, num * SMALL_PAGE_SIZE);
 	if(mm != NULL)
 		return (void*)((mm->offset << mm->pool->shift) + mm->pool->lo);
 	else

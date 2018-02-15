@@ -1213,7 +1213,7 @@ int syscall_send(struct proc *proc)
 
 	assert(proc != NULL && proc->p_rts_flags == 0);
 	
-	//DMSG("%d:sn send to %d\n", proc->p_endpoint, who);
+	DMSG("%d:sn send to %d\n", proc->p_endpoint, who);
 	if(!(who >= 0 && who < NUM_PROCS)) 
 	{
 		return -1;
@@ -1224,7 +1224,7 @@ int syscall_send(struct proc *proc)
 	if( (dproc->p_rts_flags & P_RECVING) && (dproc->p_getfrom == PROC_ANY || dproc->p_getfrom == proc->p_endpoint))
 	{
 		// msg copy
-		//DMSG("%d:sn send 1\n", proc->p_endpoint);
+		DMSG("%d:sn send 1\n", proc->p_endpoint);
 		dmsg = &dproc->p_recvmsg;
 		memcpy(dmsg, msg, sizeof(struct message));
 		dmsg->from = proc->p_endpoint;
@@ -1241,7 +1241,7 @@ int syscall_send(struct proc *proc)
 	else
 	{
 		// msg copy
-		//DMSG("%d:sn send 2\n", proc->p_endpoint);
+		DMSG("%d:sn send 2\n", proc->p_endpoint);
 		proc->p_rts_flags |= P_SENDING;
 		proc->p_sendto = who;
 		dmsg = &proc->p_sendmsg; 	
@@ -1285,7 +1285,7 @@ int syscall_receive(struct proc *proc)
 		return -1;
 	}
 	
-	//DMSG("%d:sn recv from %d\n", proc->p_endpoint, who);
+	DMSG("%d:sn recv from %d\n", proc->p_endpoint, who);
 	if(proc->p_pending)
 	{
 		m.to = who;
@@ -1309,7 +1309,7 @@ int syscall_receive(struct proc *proc)
 	{
 		assert((sproc->p_rts_flags & P_SENDING) && sproc->p_sendto == proc->p_endpoint);
 		// msg copy
-		//DMSG("%d:sn recv 1\n", proc->p_endpoint);
+		DMSG("%d:sn recv 1\n", proc->p_endpoint);
 		smsg = &sproc->p_sendmsg;
 		memcpy(msg, smsg, sizeof(struct message));
 		assert(smsg->from = sproc->p_endpoint);
@@ -1331,7 +1331,7 @@ int syscall_receive(struct proc *proc)
 	}
 	else 
 	{
-		//DMSG("%d:sn recv 2\n", proc->p_endpoint);
+		DMSG("%d:sn recv 2\n", proc->p_endpoint);
 		proc->p_rts_flags |= P_RECVING;
 		proc->p_getfrom = who;
 		proc->p_recvaddr = msg;
@@ -1347,9 +1347,9 @@ int syscall_sendrec(struct proc *proc)
 	struct proc *dproc, *sproc, *tmp;
 	struct message *dmsg, *smsg;
 
-	assert(proc != NULL && proc->p_rts_flags==0);
+	assert(proc != NULL && proc->p_rts_flags == 0);
 	
-	//DMSG("%d:sn send to %d\n", proc->p_endpoint, who);
+	DMSG("%d:sn send to %d\n", proc->p_endpoint, who);
 	tmp = NULL;
 	if(!(who >= 0 && who < NUM_PROCS)) 
 	{
@@ -1357,9 +1357,11 @@ int syscall_sendrec(struct proc *proc)
 	}
 	
 	dproc = &procs[who];
-	if((dproc->p_rts_flags & P_RECVING) && (dproc->p_getfrom == PROC_ANY || dproc->p_getfrom == proc->p_endpoint)) {
+
+	if((dproc->p_rts_flags & P_RECVING) && (dproc->p_getfrom == PROC_ANY || dproc->p_getfrom == proc->p_endpoint)) 
+	{
 		// msg copy
-		//DMSG("%d:sn send 1\n", proc->p_endpoint);
+		DMSG("%d:sn send 1\n", proc->p_endpoint);
 		dmsg = &dproc->p_recvmsg;
 		memcpy(dmsg, msg, sizeof(struct message));
 		dmsg->from = proc->p_endpoint;
@@ -1376,7 +1378,7 @@ int syscall_sendrec(struct proc *proc)
 	else
 	{
 		// msg copy
-		//DMSG("%d:sn send 2\n", proc->p_endpoint);
+		DMSG("%d:sn send 2\n", proc->p_endpoint);
 		proc->p_rts_flags |= (P_SENDING | P_RECVING);
 		proc->p_sendto = who;
 		dmsg = &proc->p_sendmsg; 	
@@ -1385,7 +1387,9 @@ int syscall_sendrec(struct proc *proc)
 		dmsg->to = who;
 		// dest p_caller_q link
 		if(dproc->p_caller_q == NULL)
+		{
 			dproc->p_caller_q = proc;
+		}
 		else
 		{
 			tmp = dproc->p_caller_q;
@@ -1400,6 +1404,7 @@ int syscall_sendrec(struct proc *proc)
 		proc->p_recvaddr = msg;
 		return 0;
 	}
+
 	tmp = NULL;
     sproc = proc->p_caller_q;
     while(sproc != NULL) 
@@ -1415,7 +1420,7 @@ int syscall_sendrec(struct proc *proc)
     {
         assert((sproc->p_rts_flags & P_SENDING) && sproc->p_sendto == proc->p_endpoint);
         // msg copy
-        //DMSG("%d:sn recv 1\n", proc->p_endpoint);
+        DMSG("%d:sn recv 1\n", proc->p_endpoint);
         smsg = &sproc->p_sendmsg;
         memcpy(msg, smsg, sizeof(struct message));
         assert(smsg->from == sproc->p_endpoint);
@@ -1437,7 +1442,7 @@ int syscall_sendrec(struct proc *proc)
     }
     else 
     {
-        //DMSG("%d:sn recv 2\n", proc->p_endpoint);
+        DMSG("%d:sn recv 2\n", proc->p_endpoint);
         proc->p_rts_flags |= P_RECVING;
         proc->p_getfrom = who;
         proc->p_recvaddr = msg;
@@ -1451,7 +1456,6 @@ int sn_notify(int who)
 	struct proc *dproc;
 	struct message *dmsg;
 	struct message m;
-	//DMSG("%d:sn send to %d\n", proc->p_endpoint, who);
 	if(!(who >= 0 && who < NUM_PROCS)) 
 	{
 		return -1;

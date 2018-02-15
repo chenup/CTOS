@@ -38,8 +38,9 @@
 #include <malloc.h>
 #include "tee_api_private.h"
 
-//TODO 2018-2-13
-#include <printk.h>
+//TODO 2018-2-15
+#include <tee_ipc.h>
+
 /*
  * Pull in symbol __utee_mcount.
  * This symbol is implemented in assembly in its own compilation unit, and is
@@ -87,9 +88,12 @@ static struct ta_session *ta_header_get_session(uint32_t session_id)
 {
 	struct ta_session *itr;
 
-	TAILQ_FOREACH(itr, &ta_sessions, link) {
-		if (itr->session_id == session_id)
+	TAILQ_FOREACH(itr, &ta_sessions, link) 
+	{
+		if(itr->session_id == session_id)
+		{
 			return itr;
+		}
 	}
 	return NULL;
 }
@@ -219,18 +223,25 @@ static TEE_Result user_main(void)
 	int temp = 0;
 	int res = fork();
 	if(res < 0)
+	{
 		trace_ext_puts("fork error!\n");
+	}
 	else if(res == 0)
+	{
 		trace_ext_puts("This is process 1: I am father\n");
+	}
 	else
+	{
 		printf("This is process %d: I am child\n", res);
+	}
 	while(1) 
 	{
 		if(res == 0)
 		{
 			res = 1;
 		}
-		if(num % (64 * 1024 * 1024) == 0 && temp < 5) {
+		if(num % (64 * 1024 * 1024) == 0 && temp < 5) 
+		{
 			printf("hello res %d\n", res);
 			temp++;
 		}
@@ -251,7 +262,7 @@ struct mproc
 struct mproc mprocs[16];
 
 //TODO 2018-2-13
-static TEE_Result pm_main(void)
+static void pm_main(void)
 {
 	struct message msg;
 	int res;
@@ -259,7 +270,8 @@ static TEE_Result pm_main(void)
 	trace_ext_puts("This is PM, I am waiting for message\n");
 	mprocs[0].mp_endpoint = 0;
 	mprocs[1].mp_endpoint = 1;
-	while(1) {
+	while(1) 
+	{
 		res = utee_receive(-1, &msg);
 		if(res != 0) 
 		{
@@ -286,17 +298,19 @@ static TEE_Result pm_main(void)
 			}
 		}
 	}
-	return TEE_SUCCESS;
 }
 
 //TODO 2018-2-11
 void __noreturn __tee_utee_entry(void)
 {
+	//USER
 	TEE_Result res;
 	res = user_main();
-	//TODO 2018-2-13
-	//res = pm_main();
 	utee_return(res);
+	//TODO 2018-2-13
+	//PM
+	//pm_main();
+	
 }
 
 void __noreturn __utee_entry(unsigned long func, unsigned long session_id,

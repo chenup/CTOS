@@ -14,6 +14,7 @@
 
 //TODO 2018-2-6
 // p_misc_flags
+//proc receive message but not to copy to user
 #define P_DELIVE (1 << 0)
 #define P_INTER (1 << 1)
 

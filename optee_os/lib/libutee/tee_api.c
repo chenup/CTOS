@@ -32,6 +32,8 @@
 #include <user_ta_header.h>
 #include "tee_user_mem.h"
 #include "tee_api_private.h"
+//TODO 2018-2-15
+#include <tee_ipc.h>
 
 static const void *tee_api_instance_data;
 
@@ -351,7 +353,11 @@ int fork(void)
 	msg.type = M_TYPE_FORK;
 	res = utee_sendrec(0, &msg);
 	if(res == 0)
+	{
 		return msg.u.mp_pid;
+	}
 	else
+	{
 		return -1;
+	}
 }
