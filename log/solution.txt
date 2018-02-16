@@ -893,6 +893,17 @@ optee fork 2018-2-12
 \optee_os\lib\libutee\include\
 + tee_ipc.h
 
+\optee_os\core\include\rtos_time.h
+-> uint64_t get_monotonic(void);
+
+\optee_os\core\kernel\rtos_time.c
+-> uint64_t get_monotonic(void) {...}
+
+\optee_os\core\tee\tee_svc.c
+-> #include <rtos_time.h>
+-> m.u.ts = get_monotonic(); (syscall_receive {...})
+-> m.u.ts = get_monotonic(); (int sn_notify {...})
+
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee memcpy asm 2018-2-13
 ++++++++++++++++++++++++++++++++++++++++++++++++
@@ -912,6 +923,26 @@ optee memset asm 2018-2-13
 -> srcs-$(CFG_ARM64_$(sm)) += phys_set.S
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
+optee proc Interrupt 2018-2-16
+++++++++++++++++++++++++++++++++++++++++++++++++
+######phase 1###### 2018-2-16
+\optee_os\core\arch\arm\plat-vexpress\main.c
+-> static void main_fiq(void) {...}
+
+\optee_os\core\kernel\rtos_timer.c
+-> void update_process_times(void) {...}
+
+\optee_os\core\arch\arm\kernel\thread_a64.S
+-> //process_native_intr_handler fiq (LOCAL_FUNC elx_fiq {...} END_FUNC elx_fiq)
+-> proc_native_intr_handler fiq
+-> .macro proc_native_intr_handler mode:req {...} .endm
+-> .macro intr_save_proc_context {...} .endm
+
+\optee_os\core\arch\arm\kernel\asm-defines.c
+-> DEFINE(PCB_REGS_X4, offsetof(struct proc, regs.x[4]));
+-> DEFINE(PCB_REGS_SPSR, offsetof(struct proc, regs.spsr));
+
+++++++++++++++++++++++++++++++++++++++++++++++++
 optee work left
 ++++++++++++++++++++++++++++++++++++++++++++++++
 \optee_os\core\arch\arm\mm\pgt_cache.c
@@ -921,3 +952,10 @@ optee work left
 	? condvar_broadcast
 	? condvar_wait
 }
+
+lock:
+1、 proc->p_rts_flags |= P_SENDING;
+2、 if(p->p_rts_flags !=0)
+		DMSG("interrupted proc not running!\n");
+	else
+		enqueue_head(p);

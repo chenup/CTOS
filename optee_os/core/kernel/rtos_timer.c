@@ -218,11 +218,13 @@ void do_timer(unsigned long ticks)
 void update_process_times(void)
 {
 	run_local_timers();
-	//TODO
+	//TODO 2018-2-16
+	/*
 	if(jiffies_64 % 16 == 0)
 	{
 		scheduler_tick();
 	}
+	*/
 	
 }
 

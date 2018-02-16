@@ -991,6 +991,46 @@ foreign_old_func:
 	store_xregs x0, THREAD_CTX_REGS_X0, 4, 7
 .endm
 
+//TODO 2018-2-16
+/* save proc context in interrupt. */
+.macro intr_save_proc_context
+	get_proc sp, 0, 1, 2
+	mrs x1, sp_el0
+	mrs x2, elr_el1
+	stp x1, x2, [x0, #PCB_REGS_SP]
+	mrs x1, spsr_el1
+	str x1, [x0, #PCB_REGS_SPSR]
+	store_xregs x0, PCB_REGS_X4, 4, 30
+	load_xregs sp, CPU_LOCAL_X0, 4, 7 
+	store_xregs x0, PCB_REGS_X0, 4, 7
+.endm
+
+
+//TODO 2018-2-16
+/* The proc handler of native interrupt. */
+.macro proc_native_intr_handler mode:req
+	/*
+	 * Update core local flags
+	 */
+//TODO
+	.ifc	\mode\(),fiq
+	ldr x0, [sp, #CPU_LOCAL_CUR_PROC]	
+	cmp x0, #-1
+	b.eq proc_common_native_func
+	intr_save_proc_context
+	ldr	x1, [sp, #CPU_LOCAL_TMP_STACK]
+	msr	spsel, #0
+	mov	sp, x1
+	bl	thread_check_canaries
+	adr	x16, thread_nintr_handler_ptr
+	ldr	x16, [x16]
+	blr	x16
+	.endif
+proc_common_native_func:
+	native_intr_handler \mode\()
+	eret
+.endm
+
 //TODO
 /* The new handler of native interrupt. */
 .macro process_native_intr_handler mode:req
@@ -1092,6 +1132,8 @@ LOCAL_FUNC elx_fiq , :
 #else
 //TODO
 	//native_intr_handler	fiq
-	process_native_intr_handler	fiq
+//TODO 2018-2-16
+	//process_native_intr_handler	fiq
+	proc_native_intr_handler fiq
 #endif
 END_FUNC elx_fiq

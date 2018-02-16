@@ -48,6 +48,8 @@
 #include <rtos_timer.h>
 #include <rtos_wait.h>
 #include <kernel/mutex.h>
+//TODO 2018-2-16
+#include <rtos_time.h>
 //TODO
 void sn_thread_sched(void);
 vaddr_t tee_svc_uref_base;
@@ -1289,8 +1291,9 @@ int syscall_receive(struct proc *proc)
 	if(proc->p_pending)
 	{
 		m.to = who;
-		m.type = M_TYPE_NOTIFY;	
-		m.u.ts = 2;
+		m.type = M_TYPE_NOTIFY;
+		//m.u.ts = 2;	
+		m.u.ts = get_monotonic();
 		memcpy(msg, &m, sizeof(struct message));
 		proc->p_pending = 0;
 		return 0;
@@ -1465,7 +1468,8 @@ int sn_notify(int who)
 	if(dproc->p_rts_flags & P_RECVING) 
 	{
 		m.type = M_TYPE_NOTIFY;
-		m.u.ts = 2;
+		//m.u.ts = 2;
+		m.u.ts = get_monotonic();
 		dmsg = &dproc->p_recvmsg;
 		memcpy(dmsg, &m, sizeof(struct message));
 		dmsg->to = who;

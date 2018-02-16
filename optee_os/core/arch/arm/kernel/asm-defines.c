@@ -93,6 +93,9 @@ DEFINES
 	DEFINE(PCB_REGS_SP, offsetof(struct proc, regs.sp));
 	DEFINE(PCB_REGS_X0, offsetof(struct proc, regs.x[0]));
 	DEFINE(PCB_REGS_X1, offsetof(struct proc, regs.x[1]));
+	//TODO 2018-2-16
+	DEFINE(PCB_REGS_X4, offsetof(struct proc, regs.x[4]));
+	DEFINE(PCB_REGS_SPSR, offsetof(struct proc, regs.spsr));
 
 	//TODO 2018-2-6
 	/* struct pcb_regs */

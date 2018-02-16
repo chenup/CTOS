@@ -14,5 +14,10 @@ void timer_trick(void)
 	update_process_times();
 }
 
+//TODO 2018-2-16
+uint64_t get_monotonic(void)
+{
+	return jiffies_64;
+}
 
 

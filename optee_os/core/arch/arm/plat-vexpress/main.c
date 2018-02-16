@@ -164,14 +164,31 @@ void generic_s_timer_start()
 
 static void main_fiq(void)
 {
+	struct proc *p = NULL;
 	//TODO
 	fiq_enter();
 	gic_it_handle(&gic_data);
 	//TODO
 	fiq_exit();
-	//TODO
-	//sn_sched();
-
+	//TODO 2018-2-16
+	p = get_proc();
+	if(p == NULL)
+	{
+		DMSG("main_fiq proc null!\n");
+	}
+	else
+	{
+		p->p_misc_flags |= P_INTER;
+		if(p->p_rts_flags != 0)
+		{
+			DMSG("interrupted proc not running!\n");
+		}
+		else
+		{
+			enqueue_head(p);
+		}
+	}
+	proc_schedule();
 }
 
 void console_init(void)
