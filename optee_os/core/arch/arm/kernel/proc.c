@@ -126,7 +126,7 @@ void proc_clr_boot(void)
 	res = proc_alloc((void*)0x61226c4ul);
 	if(res != 0)
 	{
-		DMSG("proc_alloc_and error!\n");
+		DMSG("proc_alloc error!\n");
 	}
 	//TODO 2018-2-6
 	proc_schedule();
@@ -207,7 +207,11 @@ void proc_schedule(void)
 	}
     //proc = proc_head.next;
 	if(proc == NULL)
+	{
 		DMSG("proc_schedulde error\n");
+		DMSG("no proc to run, cpu is going to idle\n");
+		test_cpu_idle();
+	}
 	//DMSG("sn_sched proc %d\n", proc->p_endpoint);
     //proc->next->prev = &proc_head;
     //proc_head.next = proc->next;
@@ -258,13 +262,12 @@ int enqueue(struct proc* p)
 	{
 		return -1;
 	}
-
 	lh = &run_queues[p->p_prio];
 	lp = &p->link;
 	lp->prev = lh->prev;
-	lp->prev->next = lp;
 	lp->next = lh;
-	lh->prev = lp;
+	lh->prev->next = lp;
+	lh->prev = lp; 
 	return 0;
 }
 
@@ -272,7 +275,19 @@ int enqueue(struct proc* p)
 // insert head
 int enqueue_head(struct proc* p) 
 {
-	
+	struct list_head *lh;
+	struct list_head *lp;
+	if(p == NULL || p->p_rts_flags != 0)
+	{
+		return -1;
+	}
+
+	lh = &run_queues[p->p_prio];
+	lp = &p->link;
+	lp->next = lh->next;
+	lp->prev = lh;
+	lh->next = lp;
+	lp->next->prev = lp;
 	return 0;
 }
 
@@ -323,5 +338,19 @@ int proc_fork(struct proc *proc)
 		return -1;
 	}
 	return n;
+}
+
+//TODO 2018-2-16
+void __noreturn test_cpu_idle(void)
+{
+	int num = 0;
+	while(1)
+	{
+		if(num % (60 * 1024 * 1024) == 1)
+		{
+			DMSG("cpu idle...");
+		}
+		num++;
+	}
 }
 

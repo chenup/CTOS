@@ -206,7 +206,7 @@ static void set_svc_retval(struct thread_svc_regs *regs, uint64_t ret_val)
  * the unpaged area.
  */
 
-//TODO 2018-2-9
+//TODO 2018-2-16
 void sn_tee_svc_handler(struct proc *proc)
 {
 	size_t scn;
@@ -230,7 +230,7 @@ void sn_tee_svc_handler(struct proc *proc)
 	
 	proc->uregs->x[0] = sn_tee_svc_do_call(proc, scf);
 	
-	if(proc->p_rts_flags == 0)
+	if(proc->p_rts_flags == 0 && !(proc->p_misc_flags & P_RETURN))
 	{
 		enqueue_head(proc);
 	}

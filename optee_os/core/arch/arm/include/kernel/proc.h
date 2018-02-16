@@ -17,6 +17,8 @@
 //proc receive message but not to copy to user
 #define P_DELIVE (1 << 0)
 #define P_INTER (1 << 1)
+//TODO 2018-2-16
+#define P_RETURN (1 << 2)
 
 //TODO 2018-2-6
 // p_getfrom
@@ -80,4 +82,8 @@ int enqueue_head(struct proc* p)
 
 //TODO 2018-2-13
 int proc_fork(struct proc *proc);
+
+//TODO 2018-2-16
+void __noreturn test_cpu_idle(void);
+
 #endif

@@ -1491,3 +1491,13 @@ int syscall_fork(struct proc *proc)
 {
 	return proc_fork(proc);
 }
+
+//TODO 2018-2-16
+void sn_syscall_sys_return(struct proc *proc)
+{
+	proc->p_misc_flags |= P_RETURN;
+	DMSG("user process %d finishes work, going to end!", proc->p_endpoint);
+	/*
+	destory process
+	*/
+}

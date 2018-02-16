@@ -219,9 +219,9 @@ static TEE_Result entry_invoke_command(unsigned long session_id,
 //TODO 2018-2-13
 static TEE_Result user_main(void)
 {
-	unsigned num = 0;
-	int temp = 0;
-	int res = fork();
+	int res;
+	trace_ext_puts("This is USER process\n");
+	res = fork();
 	if(res < 0)
 	{
 		trace_ext_puts("fork error!\n");
@@ -233,19 +233,6 @@ static TEE_Result user_main(void)
 	else
 	{
 		printf("This is process %d: I am child\n", res);
-	}
-	while(1) 
-	{
-		if(res == 0)
-		{
-			res = 1;
-		}
-		if(num % (64 * 1024 * 1024) == 0 && temp < 5) 
-		{
-			printf("hello res %d\n", res);
-			temp++;
-		}
-		num += 1;
 	}
 	return TEE_SUCCESS;
 }
@@ -310,6 +297,7 @@ void __noreturn __tee_utee_entry(void)
 	//TODO 2018-2-13
 	//PM
 	//pm_main();
+	//utee_return(0);
 	
 }
 

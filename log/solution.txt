@@ -815,17 +815,34 @@ optee proc schedule 2018-2-10
 \optee_os\core\arch\arm\include\kernel\proc.h
 -> int enqueue(struct proc *p);
 
-######phase 2###### 
+######phase 2###### 2018-2-16
 \optee_os\core\arch\arm\kernel\proc.c
--> int enqueue_head(struct proc* p) {...} rex
+-> #define P_RETURN (1 << 2)
+-> int enqueue_head(struct proc* p) {...}
 
 \optee_os\core\arch\arm\include\kernel\proc.h
 -> int enqueue_head(struct proc *p);
 
+\optee_os\core\arch\arm\tee\arch_svc_a64.S
+-> /* sn_syscall_sys_return */
+
+\optee_os\core\tee\tee_svc.c
+-> void sn_syscall_sys_return(struct proc *proc) {...}
+
+\optee_os\core\arch\arm\tee\arch_svc.c
+-> void sn_tee_svc_handler(struct proc *proc) {...}
+
+\optee_os\core\arch\arm\include\kernel\proc.h
+-> void __noreturn test_cpu_idle(void);
+
+\optee_os\core\arch\arm\kernel\proc.c
+-> void proc_schedule(void) {...}
+-> void __noreturn test_cpu_idle(void) {...}
+
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee fork 2018-2-12
 ++++++++++++++++++++++++++++++++++++++++++++++++
-######phase 1###### 
+######phase 1###### 2018-2-16
 \optee_os\core\include\tee\tee_svc.h
 -> int syscall_fork(struct proc *proc);
 

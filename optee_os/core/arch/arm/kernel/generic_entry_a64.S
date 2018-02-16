@@ -181,7 +181,7 @@ clear_bss:
 
 	//TODO 2018-2-3
 	bl 	proc_clr_boot
-
+	
 	/* Pass the vector address returned from main_init */
 	mov	x1, x19
 	mov	x0, #TEESMC_OPTEED_RETURN_ENTRY_DONE

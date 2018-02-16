@@ -194,12 +194,14 @@ END_FUNC tee_svc_do_call
  */
 
 //TODO 2018-2-11
+/*
 FUNC sn_syscall_sys_return , :
 	ldr	x30, [x0, #UREGS_X30]
 	ldr	x1, [x0, #UREGS_SP]
 	mov sp, x1
 	ret
 END_FUNC sn_syscall_sys_return
+*/
 
 FUNC syscall_sys_return , :
 	mov	x1, #0  /* panic = false */
