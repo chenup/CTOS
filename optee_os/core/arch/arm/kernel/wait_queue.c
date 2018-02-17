@@ -36,6 +36,8 @@
 
 //TODO
 #include <rtos_sched.h>
+//TODO 2018-2-17
+#include <kernel/proc.h>
 
 static unsigned wq_spin_lock;
 
@@ -88,12 +90,15 @@ static void slist_add_tail(struct wait_queue *wq, struct wait_queue_elem *wqe)
 		SLIST_INSERT_HEAD(wq, wqe, link);
 }
 
+//TODO 2018-2-17
 void wq_wait_init_condvar(struct wait_queue *wq, struct wait_queue_elem *wqe,
 		struct condvar *cv)
 {
 	uint32_t old_itr_status;
 
-	wqe->handle = thread_get_id();
+	//wqe->handle = thread_get_id();
+	//TODO 2018-2-17
+	wqe->handle = proc_get_id();
 	wqe->done = false;
 	wqe->cv = cv;
 
@@ -112,7 +117,9 @@ void tee_wq_wait_final(struct wait_queue *wq, struct wait_queue_elem *wqe, struc
 
 	do {
 		
-		mutex_process_sleep();
+		//mutex_process_sleep();
+		//TODO 2018-2-17
+		mutex_proc_sleep();
 		old_itr_status = cpu_spin_lock_xsave(&wq_spin_lock);
 		done = wqe->done;
 		if (done)
@@ -145,21 +152,25 @@ void wq_wait_final(struct wait_queue *wq, struct wait_queue_elem *wqe,
 	} while (!done);
 }
 
-//TODO
+//TODO 2018-2-17
 void tee_wq_wake_one(struct wait_queue *wq)
 {
 	uint32_t old_itr_status;
 	struct wait_queue_elem *wqe;
-	//int handle = -1;
+	int handle = -1;
 	//bool do_wakeup = false;
 
 	old_itr_status = cpu_spin_lock_xsave(&wq_spin_lock);
 
-	SLIST_FOREACH(wqe, wq, link) {
+	SLIST_FOREACH(wqe, wq, link) 
+	{
 		if (!wqe->cv) {
 			//do_wakeup = !wqe->done;
 			wqe->done = true;
-			//handle = wqe->handle;
+			handle = wqe->handle;
+			//TODO 2018-2-17
+			assert(handle != -1);
+			enqueue(&procs[handle]);
 			break;
 		}
 	}

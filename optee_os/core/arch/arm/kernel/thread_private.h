@@ -236,6 +236,10 @@ int thread_state_suspend(uint32_t flags, uint32_t cpsr, vaddr_t pc);
 
 //TODO
 void sn_thread_state_suspend(vaddr_t pc, uint32_t cpsr);
+
+//TODO 2018-2-17
+void proc_state_suspend(void);
+
 /*
  * Marks the current thread as free.
  */
@@ -280,6 +284,9 @@ void __sn_thread_std_smc_entry(struct thread_smc_args *args);
 
 //TODO
 void sn_thread_sched(void);
+
+//TODO 2018-2-18
+void __proc_suspend(void);
 
 #endif /*ASM*/
 

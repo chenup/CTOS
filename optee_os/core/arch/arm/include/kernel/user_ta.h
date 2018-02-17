@@ -43,6 +43,9 @@ TAILQ_HEAD(tee_cryp_state_head, tee_cryp_state);
 TAILQ_HEAD(tee_obj_head, tee_obj);
 TAILQ_HEAD(tee_storage_enum_head, tee_storage_enum);
 
+//TODO 2018-2-17
+struct proc;
+
 struct user_ta_ctx {
 	uaddr_t entry_func;
 	uaddr_t exidx_start;	/* 32-bit TA: exception handling index table */

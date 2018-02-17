@@ -31,6 +31,9 @@
 #include <kernel/thread.h>
 #include <trace.h>
 
+//TODO 2018-2-17
+#include <kernel/proc.h>
+
 void mutex_init(struct mutex *m)
 {
 	*m = (struct mutex)MUTEX_INITIALIZER;
@@ -42,7 +45,8 @@ static void __tee_mutex_lock(struct mutex *m)
 	//assert_have_no_spinlock();
 	//assert(thread_get_id_may_fail() != -1);
 
-	while (true) {
+	while (true) 
+	{
 		uint32_t old_itr_status;
 		enum mutex_value old_value;
 		struct wait_queue_elem wqe;
@@ -69,7 +73,9 @@ static void __tee_mutex_lock(struct mutex *m)
 			//assert(owner != thread_get_id_may_fail());
 		} else {
 			m->value = MUTEX_VALUE_LOCKED;
-			thread_add_mutex(m);
+			//thread_add_mutex(m);
+			//TODO 2018-2-17
+			proc_add_mutex(m);
 		}
 
 		cpu_spin_unlock(&m->spin_lock);
@@ -148,9 +154,13 @@ static void __tee_mutex_unlock(struct mutex *m)
 	cpu_spin_lock(&m->spin_lock);
 	
 	if (m->value != MUTEX_VALUE_LOCKED)
+	{
 		panic();
+	}
 
-	tee_thread_rem_mutex(m);
+	//tee_thread_rem_mutex(m);
+	//TODO 2018-2-17
+	proc_rem_mutex(m);
 	//m->value = MUTEX_VALUE_UNLOCKED;
     
 	cpu_spin_unlock(&m->spin_lock);
@@ -197,7 +207,9 @@ static bool __tee_mutex_trylock(struct mutex *m)
 	old_value = m->value;
 	if (old_value == MUTEX_VALUE_UNLOCKED) {
 		m->value = MUTEX_VALUE_LOCKED;
-		thread_add_mutex(m);
+		//thread_add_mutex(m);
+		//TODO 2018-2-17
+		proc_add_mutex(m);
 	}
 
 	cpu_spin_unlock(&m->spin_lock);

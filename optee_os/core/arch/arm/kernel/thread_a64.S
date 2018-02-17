@@ -347,6 +347,31 @@ FUNC thread_rpc , :
 	ret
 END_FUNC thread_rpc
 
+//TODO 2018-2-17
+FUNC __proc_suspend , :
+	/* Read daif and create an SPSR */
+	mrs	x1, daif
+	orr	x1, x1, #(SPSR_64_MODE_EL1 << SPSR_64_MODE_EL_SHIFT)
+
+	/* Mask all maskable exceptions before switching to temporary stack */
+	msr	daifset, #DAIFBIT_ALL
+	msr spsel, #1
+	ldr x0, [sp, #CPU_LOCAL_CUR_PROC]
+	get_proc sp, 0, 2, 3
+	ldr	x3, [sp, #CPU_LOCAL_TMP_STACK]
+	msr spsel, #0
+	str x1, [x0, #PCB_REGS_SPSR]
+	mov x1, sp
+	mov x2, x30 
+	stp x1, x2, [x0, #PCB_REGS_SP]
+	store_xregs x0, PCB_REGS_X19, 19, 30
+	mov	sp, x3
+	bl	thread_check_canaries
+	b	proc_state_suspend
+
+END_FUNC __proc_suspend
+
+
 /* TODO */
 FUNC sn_thread_sched , :
 	/* Read daif and create an SPSR */

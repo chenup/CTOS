@@ -477,6 +477,46 @@ optee mutex 2018-1-31
 -> static struct mutex tee_m = MUTEX_INITIALIZER;
 -> void syscall_sn_test(void) {...}
 
+######phase 2###### 2018-2-17
+\optee_os\core\arch\arm\include\kernel\proc.h
+-> struct mutex_head mutexes; (struct proc {...};)
+-> void proc_add_mutex(struct mutex *m);
+-> void mutex_proc_sleep(void);
+-> void proc_rem_mutex(struct mutex *m);
+-> int proc_get_id(void);
+
+\optee_os\core\arch\arm\kernel\proc.c
+-> void proc_add_mutex(struct mutex *m) {...}
+-> void mutex_proc_sleep(void) {...}
+-> void proc_rem_mutex(struct mutex *m) {...}
+-> void proc_state_suspend(void) {...}
+-> int proc_get_id(void) {...}
+
+\optee_os\core\arch\arm\kernel\mutex.c
+-> proc_add_mutex(m); (__tee_mutex_lock {...})
+-> proc_add_mutex(m); (__tee_mutex_trylock {...})
+-> proc_rem_mutex(m); (__tee_mutex_unlock {...})
+-> #include <kernel/proc.h>
+
+\optee_os\core\arch\arm\kernel\wait_queue.c
+-> mutex_proc_sleep(); (tee_wq_wait_final {...})
+-> void tee_wq_wake_one(struct wait_queue *wq) {...}
+-> wqe->handle = proc_get_id(); (wq_wait_init_condvar {...})
+-> #include <kernel/proc.h>
+
+\optee_os\core\arch\arm\kernel\thread_private.h
+-> void __proc_suspend(void);
+-> void proc_state_suspend(void);
+
+\optee_os\core\arch\arm\kernel\thread_a64.S
+-> FUNC __proc_suspend {...} END_FUNC __proc_suspend
+
+\optee_os\core\arch\arm\kernel\asm-defines.c
+-> DEFINE(PCB_REGS_X19, offsetof(struct proc, regs.x[19]));
+
+\optee_os\core\arch\arm\include\kernel\user_ta.h
+-> struct proc;
+
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee proc structure 2018-2-2
 ++++++++++++++++++++++++++++++++++++++++++++++++
@@ -603,7 +643,6 @@ optee process elf run 2018-2-2
 
 \optee_os\core\arch\arm\tee\arch_svc_a64.S
 -> FUNC sn_syscall_sys_return {...} END_FUNC sn_syscall_sys_return
-
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 optee process elf load 2018-2-2

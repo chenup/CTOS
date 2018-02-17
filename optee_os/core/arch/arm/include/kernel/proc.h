@@ -60,6 +60,8 @@ struct proc {
 	struct proc* p_caller_q; /* head of list of procs wishing to send */
 	struct proc* p_q_link; /* link to next proc wishing to send */
 	struct list_head link;
+    //TODO 2018-2-17
+    struct mutex_head mutexes;
 } __aligned(16);
 
 //TODO 2018-2-3
@@ -86,4 +88,10 @@ int proc_fork(struct proc *proc);
 //TODO 2018-2-16
 void __noreturn test_cpu_idle(void);
 
+//TODO 2018-2-17
+void proc_add_mutex(struct mutex *m);
+void mutex_proc_sleep(void);
+void proc_rem_mutex(struct mutex *m);
+//TODO 2018-2-17
+int proc_get_id(void);
 #endif

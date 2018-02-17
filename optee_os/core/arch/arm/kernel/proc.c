@@ -196,6 +196,7 @@ void proc_schedule(void)
 	int i;
 	//lock_global();
 
+	cpu_l->cur_proc = -1;
 	for(i = 0; i < NUM_PRIO; i++) {
 		lh = &run_queues[i]; 
 		if(lh->next != lh) {
@@ -356,3 +357,65 @@ void __noreturn test_cpu_idle(void)
 	}
 }
 
+//TODO 2018-2-17
+int proc_get_id(void)
+{
+	int ct;
+	struct cpu_local *l = get_cpu_local();
+	uint32_t exceptions = thread_mask_exceptions(THREAD_EXCP_FOREIGN_INTR);
+	ct = l->cur_proc;
+	thread_unmask_exceptions(exceptions);
+	assert(ct >= 0 && ct < NUM_PROCS);
+	return ct;
+}
+
+//TODO 2018-2-17
+void proc_add_mutex(struct mutex *m)
+{
+	struct cpu_local *l = get_cpu_local();
+	int ct = l->cur_proc;
+
+	assert(ct != -1 && procs[ct].p_rts_flags == 0);
+	assert(m->owner_id == MUTEX_OWNER_ID_NONE);
+	m->owner_id = ct;
+	TAILQ_INSERT_TAIL(&procs[ct].mutexes, m, link);
+}
+
+//TODO 2018-2-17
+void mutex_proc_sleep(void) 
+{
+	__proc_suspend();
+}
+
+//TODO 2018-2-17
+void proc_state_suspend(void)
+{
+	/*
+	struct cpu_local *l = get_cpu_local();
+	int ct = l->cur_proc;
+	struct proc *p;
+	assert(ct != -1);
+	p = &procs[ct];
+	lock_global();
+	assert(threads[ct].state == THREAD_STATE_ACTIVE);
+	threads[ct].have_user_map = core_mmu_user_mapping_is_active();
+	if (threads[ct].have_user_map) {
+		core_mmu_get_user_map(&threads[ct].user_map);
+		core_mmu_set_user_map(NULL);
+	}
+	unlock_global();
+	*/
+	proc_schedule();
+}
+
+//TODO 2018-2-17
+void proc_rem_mutex(struct mutex *m)
+{
+	struct cpu_local *l = get_cpu_local();
+	int ct = l->cur_proc;
+
+	assert(ct != -1 && procs[ct].p_rts_flags == 0);
+	assert(m->owner_id == ct);
+	m->owner_id = MUTEX_OWNER_ID_NONE;
+	TAILQ_REMOVE(&procs[ct].mutexes, m, link);
+}

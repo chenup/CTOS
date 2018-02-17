@@ -599,12 +599,12 @@ bool sn_pgt_alloc(struct pgt_cache *pgt_cache,
 	if (last <= begin)
 		return false;
 
-	//mutex_lock(&pgt_mu);
+	//tee_mutex_lock(&pgt_mu);
 
 	sn_pgt_free_unlocked(pgt_cache);
 
 	if(!sn_pgt_alloc_unlocked(pgt_cache, begin, last)) {
-		//mutex_unlock(&pgt_mu);
+		//tee_mutex_unlock(&pgt_mu);
 		return false;
 	}
 	/*
@@ -614,7 +614,7 @@ bool sn_pgt_alloc(struct pgt_cache *pgt_cache,
 		condvar_wait(&pgt_cv, &pgt_mu);
 	}
 	*/
-	//mutex_unlock(&pgt_mu);
+	//tee_mutex_unlock(&pgt_mu);
 	return true;
 }
 
