@@ -1039,6 +1039,7 @@ foreign_old_func:
 	 */
 //TODO
 	.ifc	\mode\(),fiq
+	msr	daifset, #DAIFBIT_ALL
 	ldr x0, [sp, #CPU_LOCAL_CUR_PROC]	
 	cmp x0, #-1
 	b.eq proc_common_native_func
