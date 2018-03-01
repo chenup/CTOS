@@ -754,6 +754,17 @@ sp->sp_el1
 sp_el1: cpu_local
 x21: procs[n]
 
+++++++++++++++++++++++++++++++++++++++++++++++++
+OPTEE source files structure
+++++++++++++++++++++++++++++++++++++++++++++++++
++core
++documentation
++keys
++lib
++mk
++scripts
++ta
+
 
 
 
