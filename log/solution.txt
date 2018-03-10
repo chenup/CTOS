@@ -982,6 +982,46 @@ optee proc Interrupt 2018-2-16
 -> DEFINE(PCB_REGS_SPSR, offsetof(struct proc, regs.spsr));
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
+optee signal 2018-3-8
+++++++++++++++++++++++++++++++++++++++++++++++++
+######phase 1######
+\optee_os\lib\libutee\include\
++ tee_signal.h
++ tee_pm_proto.h
++ tee_errno.h
+
+\optee_os\lib\libutee\arch\arm\user_ta_entry.c
+-> static TEE_Result user_signal_test(void) {...}
+
+\optee_os\lib\libutee\
++ tee_sigaction.c
++ tee_syscall.c
++ tee_pm_signal.c
++ tee_kill.c
+
+\optee_os\lib\libutee\sub.mk
+-> srcs-y += tee_sigaction.c
+-> srcs-y += tee_syscall.c
+-> srcs-y += tee_pm_signal.c
+-> srcs-y += tee_kill.c
+
+\optee_os\lib\libutee\include\tee_ipc.h
+-> #define M_TYPE_SIGACTION 3
+-> #define M_TYPE_KILL 4
+-> mess_pm_sig m_pm_sig; (struct message {...})
+-> typedef struct {...} mess_pm_sig;
+
+\optee_os\lib\libutee\arch\arm\user_ta_entry.c
+-> pm_main() {...}
+
+\optee_os\lib\libutee\arch\arm\utee_syscalls_asm.S
+-> UTEE_SYSCALL do_sigaction, TEE_SCN_SIGACTION, 0
+
+\optee_os\lib\libutee\include\tee_syscall_numbers.h
+-> #define TEE_SCN_SIGACTION 77
+-> #define TEE_SCN_MAX 77
+
+++++++++++++++++++++++++++++++++++++++++++++++++
 optee work left
 ++++++++++++++++++++++++++++++++++++++++++++++++
 \optee_os\core\arch\arm\mm\pgt_cache.c
