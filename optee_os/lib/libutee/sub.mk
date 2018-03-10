@@ -14,6 +14,11 @@ srcs-y += tee_api_se.c
 srcs-y += tee_api_panic.c
 srcs-y += tee_tcpudp_socket.c
 srcs-y += tee_socket_pta.c
+#TODO 2018-3-8
+srcs-y += tee_sigaction.c
+srcs-y += tee_syscall.c
+srcs-y += tee_pm_signal.c
+srcs-y += tee_kill.c
 
 subdirs-y += tui
 subdirs-y += arch/$(ARCH)

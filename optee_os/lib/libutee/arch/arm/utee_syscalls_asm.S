@@ -201,3 +201,6 @@
         
         //TODO 2018-2-12
         UTEE_SYSCALL pm_fork, TEE_SCN_FORK, 1
+
+        //TODO 2018-3-8
+        UTEE_SYSCALL do_sigaction, TEE_SCN_SIGACTION, 0

@@ -110,8 +110,12 @@
 
 //TODO 2018-2-12 
 #define TEE_SCN_FORK 76
-//TODO 2018-2-12
-#define TEE_SCN_MAX 76
+//TODO 2018-3-8
+#define TEE_SCN_SIGACTION 77
+
+//TODO 2018-3-8
+#define TEE_SCN_MAX 77
+//#define TEE_SCN_MAX 76
 
 //#define TEE_SCN_MAX 71
 //#define TEE_SCN_MAX				70

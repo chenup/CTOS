@@ -216,6 +216,12 @@ static TEE_Result entry_invoke_command(unsigned long session_id,
 	__utee_from_param(up, param_types, params);
 	return res;
 }
+//TODO 2018-3-8
+static TEE_Result user_signal_test(void)
+{
+	return TEE_SUCCESS;
+}
+
 //TODO 2018-2-13
 static TEE_Result user_main(void)
 {
@@ -248,7 +254,7 @@ struct mproc
 //TODO 2018-2-13
 struct mproc mprocs[16];
 
-//TODO 2018-2-13
+//TODO 2018-3-8
 static void pm_main(void)
 {
 	struct message msg;
@@ -283,6 +289,14 @@ static void pm_main(void)
 				msg.u.mp_pid = res;
 				utee_send(res, &msg);
 			}
+		}
+		else if(msg.type == M_TYPE_SIGACTION)
+		{
+			do_sigaction();
+		}
+		else if(msg.type == M_TYPE_KILL)
+		{
+			do_kill();
 		}
 	}
 }
