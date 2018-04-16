@@ -765,12 +765,398 @@ OPTEE source files structure
 +scripts
 +ta
 
+++++++++++++++++++++++++++++++++++++++++++++++++
+U-boot
+++++++++++++++++++++++++++++++++++++++++++++++++
+Soc: Tegra
+board: NVIDIA Jetson TX2
 
+\arch\arm\cpu\armv8\start.S
+------------------------------------------------
+_start:
+b reset
+-> b save_boot_params #允许board保存重要的寄存器
 
+save_boot_params:
+#(1) reset SCTRL寄存器，一般不要打开
+bl reset_sctrl (CONFIG_SYS_RESET_SCTRL)
+【
+	currentEL -> sctlr_elx
+	sctlr_elx = sctlr_elx & 0xfdffffa
+	__asm_invalidate_tlb_all
+-------------------------------------------------
+reset the SCTRL register at the very beginning of
+execution to avoid interference from stale mappings 
+set up by early firmware/loaders/etc
+-------------------------------------------------
+】
+#(2) 根据当前的EL级别，配置中断向量、MMU、Endian、i/d Cache等
+#可以是在EL3/EL2/EL1
+#初始状态：(1) Little Endian (2) MMU Disabled (3) i/dCache Disabled
+vectors -> vbar_elx
+--------------------------------------------------
+vectors: \arch\arm\cpu\armv8\exceptions.S
+--------------------------------------------------
+EL3: 
+(1)set vbar_el3 
+(2)set scr_el3 #Enable FP/SIMD 
+(3)set cntfrq_el0 #Initialize CNTFRQ
 
+EL2:
+(1)set vbar_el2
+(2)set cptr_el2 #Enable FP/SIMD
 
+EL1:
+(1)set vbar_el1
+(2)set cpacr_el1 #Enable FP/SIMD
 
+#(3) 配置ARM的勘误表
+#目前只支持Cortex-A57 specific errata
+#由CONFIG_ARM_ERRATA_XXX控制，在项目的初期，可以不打开，后续根据实际情况打开
+bl	apply_core_errata
 
+--------------------------------------------------
+Cache/BPB/TLB失效
+i-cache is invalidated before enabled in icache_enable()
+tlb is invalidated before mmu is enabled in dcache_enable()
+d-cache is invalidated before enabled in dcache_enable()
+--------------------------------------------------
 
+#(4) 处理器特定初始化 (lowlevel_init)
+#一般情况下，不需要实现
+#start.S中也有一个WEAK类型的定义，由CONFIG_GICV2 | CONFIG_GICV3控制，一般情况下，没有打开的必要
 
+bl lowlevel_init
+【
+	do some work about gic
 
+	# All slaves will enter EL2 and optionally EL1
+	bl	armv8_switch_to_el2
+	bl	armv8_switch_to_el1 (CONFIG_ARMV8_SWITCH_TO_EL1)
+
+--------------------------------------------------
+- purpose: essential init to permit execution to reach board_init_f()
+- no global_data or BSS
+- there is no stack (ARMv7 may have one but it will soon be removed)
+- must not set up SDRAM or use console
+- must only do the bare minimum to allow execution to continue to board_init_f()
+- this is almost never needed
+- return normally from this function
+--------------------------------------------------
+】
+
+#(5) 如果是多CPU的场景，处理其它的CPU的boot
+#多CPU功能由CONFIG_ARMV8_MULTIENTRY控制，不需要打开
+
+#(6) 跳转到arm公共的_main中执行
+bl	_main
+--------------------------------------------------
+_main: \arch\arm\lib\crt0_64.S
+--------------------------------------------------
+
+--------------------------------------------------
+crt0是C-runtime Startup Code的简称，意思就是运行C代码之前的准备工作
+--------------------------------------------------
+\arch\arm\lib\crt0_64.S
+_main:
+
+#(1) 设置C代码的运行环境，为调用board_init_f接口做准备
+#stack and GD both located in some readily available RAM (SRAM, locked cache...)
+
+#(a) 设置堆栈（C代码的函数调用，堆栈是必须的）。如果当前的编译是SPL（由CONFIG_SPL_BUILD定义），可单独定义堆栈基址（CONFIG_SPL_STACK），否则，通过CONFIG_SYS_INIT_SP_ADDR定义堆栈基址
+[ ] CONFIG_SPL_STACK -> sp (CONFIG_SPL_BUILD && CONFIG_SPL_STACK)
+[*] CONFIG_SYS_INIT_SP_ADDR -> sp
+
+#(b) 调用board_init_f_alloc_reserve接口，从堆栈开始的地方，为u-boot中大名鼎鼎的GD ('global data') 数据结构，分配空间
+bl board_init_f_alloc_reserve
+【
+	sp = sp - CONFIG_SYS_MALLOC_F_LEN (CONFIG_SYS_MALLOC_F)
+	sp = sp - sizeof(struct global_data)
+--------------------------------------------------
+allocate reserved space for use as 'globals' from 'top' address 
+and return 'bottom' address of allocated space
+struct global_data: include/asm-generic/global_data.h
+--------------------------------------------------
+】
+
+#(c) 调用board_init_f_init_reserve接口，对GD进行初始化
+#将开始地址(就是一个struct global_data指针)保存在一个寄存器中，后续的传递，都是通过保存在寄存器中的指针实现
+#对arm64平台来说，该指针保存在了X18寄存器
+x0 -> x18
+bl	board_init_f_init_reserve
+【
+	clear GD with zero
+	use global data gd
+	gd->malloc_base = base (CONFIG_SYS_MALLOC_F)
+--------------------------------------------------
+initialize reserved space (which has been safely allocated on the C 
+stack from the C runtime environment handling code).
+--------------------------------------------------
+】
+
+#(2) 调用board_init_f函数，完成一些前期的初始化工作
+x0 = 0
+bl board_init_f (call board_init_f(0))
+
+\common\board_f.c
+void board_init_f(ulong boot_flags)
+【
+	#use the stack here to host global data until relocation
+	gd = &data (CONFIG_SYS_GENERIC_GLOBAL_DATA)
+	clear gd with zero (CONFIG_SYS_GENERIC_GLOBAL_DATA)
+	gd->flags = boot_flags
+	gd->have_console = 0
+	#遍历运行init_sequence_f函数队列
+	initcall_run_list(init_sequence_f)
+--------------------------------------------------
+prepare the hardware for execution from system RAM (DRAM, DDR...)
+use the current GD to store the relocation destination, 
+the future stack, and the future GD location
+--------------------------------------------------
+】
+static init_fnc_t init_sequence_f[] = {
+
+	setup_ram_buf, (CONFIG_SANDBOX)
+	
+	setup_mon_len,
+	
+	fdtdec_setup, (CONFIG_OF_CONTROL)
+
+	trace_early_init, (CONFIG_TRACE)
+
+	initf_malloc,
+
+	initf_console_record,
+
+	arch_cpu_init,
+
+	mach_cpu_init,
+
+	initf_dm,
+
+	arch_cpu_init_dm,
+
+	board_early_init_f, (CONFIG_BOARD_EARLY_INIT_F)
+
+	init_timebase,
+
+	timer_init, (CONFIG_ARM) important
+
+	get_clocks, (CONFIG_SYS_FSL_CLK || CONFIG_M68K) important
+
+	env_init,
+
+	init_baud_rate, important
+
+	serial_init, important
+
+	console_init_f,
+
+	sandbox_early_getopt_check, (CONFIG_SANDBOX)
+
+	display_options,
+
+	display_text_info,
+
+	print_cpuinfo,
+
+	show_board_info, (CONFIG_DISPLAY_BOARDINFO)
+
+	init_func_watchdog_init, (CONFIG_WATCHDOG || CONFIG_HW_WATCHDOG)
+
+	misc_init_f, (CONFIG_MISC_INIT_F)
+
+	init_func_watchdog_reset, (CONFIG_WATCHDOG || CONFIG_HW_WATCHDOG)
+
+	init_func_i2c, (CONFIG_HARD_I2C || CONFIG_SYS_I2C)
+
+	init_func_spi, (CONFIG_HARD_SPI)
+
+	announce_dram_init,
+
+	dram_init, (CONFIG_ARM) important
+}
+--------------------------------------------------
+#可能和RAM相关
+setup_ram_buf:
+【
+	gd->arch.ram_buf = state->ram_buf
+	gd->ram_size = state->ram_size
+】
+--------------------------------------------------
+#sys_monitor_len
+setup_mon_len:
+【
+	set gd->mon_len
+】
+--------------------------------------------------
+#调用fdtdec_setup，配置gd->fdt_blob指针（即device tree所在的存储位置）
+#对ARM平台来说，u-boot的Makefile会通过连接脚本，将dtb文件打包到u-boot image的“__dtb_dt_begin”位置处，因此不需要特别关心
+fdtdec_setup:
+【
+	set gd->fdt_blob
+】
+--------------------------------------------------
+#和debug相关？
+trace_early_init:
+【
+
+】
+--------------------------------------------------
+#初始化malloc有关的global data
+initf_malloc:
+【
+	gd->malloc_limit = CONFIG_SYS_MALLOC_F_LEN; (CONFIG_SYS_MALLOC_F_LEN)
+	gd->malloc_ptr = 0; (CONFIG_SYS_MALLOC_F_LEN)
+】 
+--------------------------------------------------
+initf_console_record:
+【
+】
+--------------------------------------------------
+#和具体的cpu相关
+#cpu级别的初始化操作
+arch_cpu_init:
+【
+】
+--------------------------------------------------
+mach_cpu_init:
+【
+	没有实现
+】
+--------------------------------------------------
+#driver model有关的初始化操作
+initf_dm:
+【
+	#初始化并扫描系统所有的device
+	dm_init_and_scan (CONFIG_DM && CONFIG_SYS_MALLOC_F_LEN)
+	#初始化driver model所需的timer
+	dm_timer_init (CONFIG_TIMER_EARLY)
+】
+--------------------------------------------------
+#record the board_init_f() bootstage
+mark_bootstage:
+【
+】
+--------------------------------------------------
+#执行板级的early初始化，与具体平台相关
+board_early_init_f:
+【
+】
+--------------------------------------------------
+#没做啥
+init_timebase:
+【
+】
+--------------------------------------------------
+#初始化系统的timer
+#该接口应该由平台或者板级的代码实现
+#初始化成功后，u-boot会通过其它的API获取当前的timestamp
+timer_init:
+【
+】
+--------------------------------------------------
+#获取当前CPU和BUS的时钟频率，并保存在global data中
+#与具体平台相关
+get_clocks:
+【
+	gd->cpu_clk
+	gd->bus_clk
+】
+--------------------------------------------------
+#初始化环境变量有关的逻辑，不需要特别关注
+env_init:
+【
+	gd->env_addr
+	gd->env_valid
+】
+--------------------------------------------------
+#获取当前使用串口波特率
+#可以有两个途径（优先级从高到低）：(1) 从"baudrate"中获取；(2) 从CONFIG_BAUDRATE配置项获取。
+init_baud_rate:
+【
+	gd->baudrate = getenv_ulong("baudrate", 10, CONFIG_BAUDRATE);
+】
+--------------------------------------------------
+#初始化serial
+#包括u-boot serial core以及具体的serial driver
+#该函数执行后，系统的串口（特别是用于控制台的）已经可用
+serial_init:
+【
+	gd->flags |= GD_FLG_SERIAL_READY
+	get_current()->start()
+】
+--------------------------------------------------
+#初始化系统的控制台，之后串口输出可用
+console_init_f:
+【
+	gd->have_console = 1
+	#如果使能，可以通过“silent”环境变量，控制u-boot的控制台是否输出
+	console_update_silent (CONFIG_SILENT_CONSOLE)
+	print_pre_console_buffer(PRE_CONSOLE_FLUSHPOINT1_SERIAL)
+】
+--------------------------------------------------
+#？
+sandbox_early_getopt_check:
+【
+】
+--------------------------------------------------
+#通过控制台，显示一些信息，可用于debug
+#display
+display_options:
+【
+】
+--------------------------------------------------
+#display
+display_text_info:
+【
+】
+--------------------------------------------------
+#display cpu info (and speed)
+print_cpuinfo:
+【
+】
+--------------------------------------------------
+#init watchdog
+init_func_watchdog_init:
+【
+	#init hw watchdog
+	hw_watchdog_init
+	#reset watchdog (hardware or software watchdog ?)
+	WATCHDOG_RESET
+】
+--------------------------------------------------
+#执行misc driver有关的初始化
+misc_init_f:
+【
+】
+--------------------------------------------------
+#reset watchdog
+init_func_watchdog_reset:
+【
+	WATCHDOG_RESET
+】
+--------------------------------------------------
+#执行i2c driver有关的初始化
+init_func_i2c:
+【
+	i2c_init
+】
+--------------------------------------------------
+#执行spi driver有关的初始化
+init_func_spi:
+【
+	spi_init
+】
+--------------------------------------------------
+#宣布要进行DDR的初始化
+announce_dram_init:
+【
+】
+--------------------------------------------------
+#初始化系统的DDR
+#dram_init应该由平台相关的代码实现
+dram_init:
+【
+】
+--------------------------------------------------

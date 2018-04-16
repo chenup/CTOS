@@ -65,13 +65,15 @@ static void __tee_mutex_lock(struct mutex *m)
 		cpu_spin_lock(&m->spin_lock);
 
 		old_value = m->value;
-		if (old_value == MUTEX_VALUE_LOCKED) {
+		if (old_value == MUTEX_VALUE_LOCKED) 
+		{
 			//TODO
 			wq_wait_init(&m->wq, &wqe);
 
 			//owner = m->owner_id;
 			//assert(owner != thread_get_id_may_fail());
-		} else {
+		} 
+		else {
 			m->value = MUTEX_VALUE_LOCKED;
 			//thread_add_mutex(m);
 			//TODO 2018-2-17
