@@ -975,6 +975,79 @@ static init_fnc_t init_sequence_f[] = {
 	announce_dram_init,
 
 	dram_init, (CONFIG_ARM) important
+
+	post_init_f, (CONFIG_POST)
+
+	init_func_watchdog_reset,
+
+	testdram, (CONFIG_SYS_DRAM_TEST) 
+
+	init_func_watchdog_reset,
+
+	init_post, (CONFIG_POST)
+
+	init_func_watchdog_reset,
+
+--------------------------------------------------
+Now that we have DRAM mapped and working, we can
+relocate the code and continue running from DRAM.
+
+Reserve memory at end of RAM for (top down in that order):
+- area that won't get touched by U-Boot and Linux (optional)
+- kernel log buffer
+- protected RAM
+- LCD framebuffer
+- monitor code
+- board info struct
+--------------------------------------------------
+
+	setup_dest_addr,
+
+	reserve_uboot, (CONFIG_BLACKFIN || CONFIG_XTENSA)
+
+	reserve_logbuffer, (CONFIG_LOGBUFFER && !CONFIG_ALT_LB_ADDR)
+
+	reserve_pram, (CONFIG_PRAM)
+
+	reserve_round_4k, 
+
+	reserve_mmu, (!(CONFIG_SYS_ICACHE_OFF && CONFIG_SYS_DCACHE_OFF) || CONFIG_ARM)
+
+	reserve_lcd, (CONFIG_LCD)
+
+	reserve_trace,
+
+	reserve_uboot, (!CONFIG_BLACKFIN && !CONFIG_XTENSA)
+
+	reserve_malloc, (CONFIG_SPL_BUILD)
+
+	reserve_board, (CONFIG_SPL_BUILD)
+
+	setup_machine,
+
+	reserve_global_data,
+
+	reserve_fdt,
+
+	reserve_arch,
+
+	reserve_stacks,
+
+	setup_dram_config, important
+
+	show_dram_config,
+
+	display_new_sp,
+
+	setup_board_extra, (CONFIG_SYS_EXTBDINFO)
+
+	init_func_watchdog_reset,
+
+	reloc_fdt,
+
+	setup_reloc, important
+
+	clear_bss, (CONFIG_XTENSA)
 }
 --------------------------------------------------
 #可能和RAM相关
@@ -1157,6 +1230,220 @@ announce_dram_init:
 #初始化系统的DDR
 #dram_init应该由平台相关的代码实现
 dram_init:
+【
+	gd->ram_size
+】
+--------------------------------------------------
+#和post_time_ms有关
+post_init_f:
+【
+	gd->post_init_f_time
+】
+--------------------------------------------------
+#reset watchdog
+init_func_watchdog_reset:
+【
+】
+--------------------------------------------------
+#执行DDR的测试操作
+#可以在开发阶段打开，系统稳定后关闭
+testdram:
+【
+】
+--------------------------------------------------
+init_post:
+【
+】
+--------------------------------------------------
+setup_dest_addr:
+【
+	gd->ram_size
+	gd->ram_top
+	gd->relocaddr
+】
+--------------------------------------------------
+#reserve memory for U-Boot code, data & bss
+reserve_uboot:
+【
+	gd->relocaddr
+	gd->start_addr_sp
+】
+--------------------------------------------------
+#reserve kernel log buffer
+reserve_logbuffer:
+【
+	gd->relocaddr
+】
+--------------------------------------------------
+#reserve protected RAM
+reserve_pram:
+【
+	gd->relocaddr
+】
+--------------------------------------------------
+#round memory pointer down to next 4 kB limit
+reserve_round_4k:
+【
+	gd->relocaddr
+】
+--------------------------------------------------
+#reserve TLB table
+reserve_mmu:
+【
+	gd->arch.tlb_size
+	gd->relocaddr
+	gd->arch.tlb_addr
+】
+--------------------------------------------------
+#reserve memory for LCD display (always full pages)
+reserve_lcd:
+【
+	gd->relocaddr
+	gd->fb_base
+】
+--------------------------------------------------
+reserve_trace:
+【
+	gd->relocaddr
+	gd->trace_buff
+】
+--------------------------------------------------
+#reserve memory for malloc() area
+reserve_malloc:
+【
+	gd->start_addr_sp
+】
+--------------------------------------------------
+#(permanently) allocate a Board Info struct
+reserve_board:
+【
+	gd->start_addr_sp
+	gd->bd
+】
+--------------------------------------------------
+#board id for Linux 
+setup_machine:
+【
+	gd->bd->bi_arch_number
+】
+--------------------------------------------------
+reserve_global_data:
+【
+	gd->start_addr_sp
+	gd->new_gd
+】
+--------------------------------------------------
+#if the device tree is sitting immediately above our image 
+#then we must relocate it.
+#if it is embedded in the data section, then it will be 
+#relocated with other data
+reserve_fdt:
+【
+	gd->fdt_size
+	gd->start_addr_sp
+	gd->new_fdt
+】
+--------------------------------------------------
+#architecture-specific memory reservation
+reserve_arch:
+【
+】
+--------------------------------------------------
+#reserve stacks
+reserve_stacks:
+【
+	gd->irq_sp
+	gd->start_addr_sp
+】
+--------------------------------------------------
+1）考虑到后续的kernel是在RAM的低端位置解压缩并执行的，
+为了避免麻烦，u-boot将使用DRAM的顶端地址，即gd->ram_top所代表的位置
+其中gd->ram_top是由setup_dest_addr函数配置的
+2）u-boot所使用的DRAM，主要分为三类：
+各种特殊功能所需的空间，如log buffer、MMU page table、LCD fb buffer、trace buffer等等
+u-boot的代码段、数据段、BSS段所占用的空间（就是u-boot relocate之后的执行空间），由gd->relocaddr标示
+堆栈空间，从gd->start_addr_sp处递减
+3）特殊功能以及u-boot所需空间，是由reserve_xxx系列函数保留的
+4）reserve空间分配完毕后，堆栈紧随其后，递减即可
+--------------------------------------------------
+#u-boot中DRAM的使用情况
+
++++++++++++++++++++++++++++++++ ------------------gd->ram_top
++ logbuffer                   + reserve_logbuffer
++ (LOGBUFF_RESERVE)           +
++++++++++++++++++++++++++++++++
++ protected RAM               + reserve_pram
++ (pram env or CONFIG_PRAM)   +
++++++++++++++++++++++++++++++++
++ round to 4K                 + reserve_round_4k
++++++++++++++++++++++++++++++++
++ MMU                         + reserve_mmu
++ (PGTABLE_SIZE,round to 64KB)+
++++++++++++++++++++++++++++++++
++ LCD fb buffer               + reserve_lcd
++++++++++++++++++++++++++++++++
++ Trace buffer                + reserve_trace
++ (CONFIG_TRACE_BUFFER_SIZE)  +
++++++++++++++++++++++++++++++++
++ U-Boot code, data & bss     + reserve_uboot
++++++++++++++++++++++++++++++++ ------------------gd->relocaddr
++ malloc() area               + reserve_malloc
++ (TOTAL_MALLOC_LEN)          +
++++++++++++++++++++++++++++++++
++ Board Info struct           + reserve_board
++ (sizeof(bd_t))              +
++++++++++++++++++++++++++++++++
++ new global data             + reserve_global_data
++++++++++++++++++++++++++++++++
++ new fdt (device tree)       + reserve_fdt
++++++++++++++++++++++++++++++++
++ arch-special memory         + reserve_arch
++++++++++++++++++++++++++++++++
++ arch-special stacks         + reserve_stacks
++++++++++++++++++++++++++++++++ ------------------gd->start_addr_sp
++                             +
++                             +
++                             +
++                             +
++++++++++++++++++++++++++++++++
+--------------------------------------------------
+#调用dram_init_banksize接口（由具体的平台代码实现）
+#初始化DDR的bank信息
+setup_dram_config:
+【
+	gd->bd->bi_dram[i]
+】
+--------------------------------------------------
+show_dram_config:
+【
+】
+--------------------------------------------------
+display_new_sp:
+【
+】
+--------------------------------------------------
+setup_board_extra:
+【
+	bd->bi_procfreq
+	bd->bi_plb_busfreq
+】
+--------------------------------------------------
+#将device tree拷贝到new_fdt所在的位置，也就是device tree的relocation操作
+reloc_fdt:
+【
+	memcpy(gd->new_fdt, gd->fdt_blob, gd->fdt_size)
+	gd->fdt_blob = gd->new_fdt
+】
+--------------------------------------------------
+#CONFIG_SYS_TEXT_BASE是u-boot relocation之前在（只读）memory的位置（也是编译时指定的位置），gd->relocaddr是relocation之后的位置，因此gd->reloc_off代表u-boot relocation操作之后的偏移量，后面relocation时会用到
+#global data的relocation
+setup_reloc:
+【
+	gd->reloc_off = gd->relocaddr - CONFIG_SYS_TEXT_BASE
+	memcpy(gd->new_gd, (char *)gd, sizeof(gd_t))
+】
+--------------------------------------------------
+clear_bss:
 【
 】
 --------------------------------------------------
