@@ -894,7 +894,7 @@ stack from the C runtime environment handling code).
 --------------------------------------------------
 】
 
-#(2) 调用board_init_f函数，完成一些前期的初始化工作
+#(d) 调用board_init_f函数，完成一些前期的初始化工作
 x0 = 0
 bl board_init_f (call board_init_f(0))
 
@@ -914,6 +914,7 @@ use the current GD to store the relocation destination,
 the future stack, and the future GD location
 --------------------------------------------------
 】
+
 static init_fnc_t init_sequence_f[] = {
 
 	setup_ram_buf, (CONFIG_SANDBOX)
@@ -1049,6 +1050,7 @@ Reserve memory at end of RAM for (top down in that order):
 
 	clear_bss, (CONFIG_XTENSA)
 }
+
 --------------------------------------------------
 #可能和RAM相关
 setup_ram_buf:
@@ -1445,5 +1447,140 @@ setup_reloc:
 --------------------------------------------------
 clear_bss:
 【
+】
+--------------------------------------------------
+
+#(e.1) (not SPL)根据board_init_f指定的参数，执行u-boot的relocation操作
+#(1) 建立中间环境(new sp and gd)，并且调用relocate_code()
+
+#从global data中取出relocation之后的堆栈基址，16-byte对齐后，保存到sp中
+gd->start_addr_sp -> sp
+
+#将新的global data的指针，保存在x18寄存器中
+#register volatile gd_t *gd asm ("x18")
+gd->bd - #GD_SIZE -> x18 ==> gd->new_gd -> x18
+
+#计算relocation之后的执行地址（relocation_return处），计算的方法就是当前的relocation_return位置加上gd->reloc_off
+gd->reloc_off + relocation_return -> lr
+
+#以relocation的目的地址（gd->relocaddr）为参数，调用relocate_code执行实际的relocation动作，就是将u-boot的代码段、data段、bss段等数据，拷贝到新的位置（gd->relocaddr）
+gd->relocaddr -> x0
+
+b	relocate_code
+\arch\arm\lib\relocate_64.S
+【
+	sp = sp - 32
+	x29 -> [sp]
+	x30 -> [sp + 8]
+	x0  -> [sp + 16]
+
+	#copy u-boot from flash to RAM
+
+	copy __image_copy_start ~ __image_copy_end
+
+	x0  -> [sp + 24]
+
+	#fix .rela.dyn relocations
+	__rel_dyn_start ~ __rel_dyn_end
+
+	sctlr_elx -> x0
+
+	#skip flushing cache if disabled
+
+	[sp + 16] -> x0
+	[sp + 24] -> x1
+
+	bl	__asm_flush_dcache_range
+
+	[sp] -> x29
+	[sp + 8] -> x30
+
+	sp = sp + 16
+】
+
+#(2) 建立最终的c语言运行环境
+bl c_runtime_cpu_setup
+\arch\arm\cpu\armv8\start.S
+【
+	#relocate vBAR
+	vectors -> vbar_elx
+】
+
+#(e.2) 如果当前是SPL（由CONFIG_SPL_BUILD控制）
+#no code relocation in SPL
+
+#(f) 清除BSS段，初始化为0
+#BSS段自动重定向
+__bss_start ~ __bss_end -> 0
+
+#(g) 调用board_init_r()
+new_gd(ddr) -> x0
+
+new_gd->relocaddr -> x1
+
+#board_init_r() does not return
+b	board_init_r
+
+\common\board_r.c
+void board_init_r(gd_t *new_gd, ulong dest_addr)
+【
+	initcall_run_list(init_sequence_r)
+】
+
+init_fnc_t init_sequence_r[] = {
+	initr_trace,
+
+	initr_reloc,
+
+	initr_caches, (CONFIG_ARM)
+
+	initr_reloc_global_data,
+}
+
+--------------------------------------------------
+#初始化并打开u-boot的tracing system
+initr_trace:
+【
+	trace_init(gd->trace_buff, CONFIG_TRACE_BUFFER_SIZE) (CONFIG_TRACE)
+】
+--------------------------------------------------
+#设置relocation完成的标志，起通知作用
+initr_reloc:
+【
+	gd->flags |= GD_FLG_RELOC | GD_FLG_FULL_MALLOC_INIT
+】
+--------------------------------------------------
+#打开dcache、icache等
+initr_caches:
+【
+	#打开icache
+	invalidate_icache_all()
+
+	sctlr_elx |= CR_I
+
+	#打开dcache
+	invalidate_dcache_all()
+
+	__asm_invalidate_tlb_all()
+
+	#激活mmu，建立虚拟内存
+	#虚拟地址 == 物理地址 ？
+	mmu_setup()
+
+	sctlr_elx |= CR_C
+】
+--------------------------------------------------
+#set gd
+initr_reloc_global_data:
+【
+	monitor_flash_len
+
+	gd->arch.cpu (CONFIG_MPC85xx || CONFIG_MPC86xx)
+
+	gd->env_addr (CONFIG_SYS_EXTRA_ENV_RELOC)
+
+	gd->fdt_blob (CONFIG_OF_EMBED)
+
+	efi_runtime_relocate() (CONFIG_EFI_LOADER)
 】
 --------------------------------------------------
