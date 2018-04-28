@@ -1535,6 +1535,142 @@ init_fnc_t init_sequence_r[] = {
 	initr_caches, (CONFIG_ARM)
 
 	initr_reloc_global_data,
+
+	initr_unlock_ram_in_cache, (CONFIG_SYS_INIT_RAM_LOCK && CONFIG_E500)
+
+	initr_barrier,
+
+	initr_malloc,
+
+	initr_console_record,
+
+	initr_noncached, (CONFIG_SYS_NONCACHED_MEMORY)
+
+	bootstage_relocate,
+
+	initr_dm, (CONFIG_DM)
+
+	initr_bootstage,
+
+	board_init, (ARM || CONFIG_NDS32) important
+
+	set_cpu_clk_info, (CONFIG_CLOCKS)
+
+	efi_memory_init, (CONFIG_EFI_LOADER)
+
+	stdio_init_tables,
+
+	initr_serial,
+
+	initr_announce,
+
+	init_func_watchdog_reset, (CONFIG_WATCHDOG || CONFIG_HW_WATCHDOG)
+
+	initr_manual_reloc_cmdtable, (CONFIG_NEEDS_MANUAL_RELOC)
+
+	initr_addr_map, (CONFIG_ADDR_MAP)
+
+	board_early_init_r, (CONFIG_BOARD_EARLY_INIT_R) important
+
+	init_func_watchdog_reset, (CONFIG_WATCHDOG || CONFIG_HW_WATCHDOG)
+
+	initr_logbuffer, (CONFIG_LOGBUFFER)
+
+	initr_post_backlog, (CONFIG_POST)
+
+	init_func_watchdog_reset, (CONFIG_WATCHDOG || CONFIG_HW_WATCHDOG)
+
+	initr_icache_enable, (CONFIG_SYS_DELAYED_ICACHE)
+
+	initr_pci, (CONFIG_PCI || CONFIG_SYS_EARLY_PCI_INIT)
+
+	arch_early_init_r, (CONFIG_ARCH_EARLY_INIT_R)
+
+	power_init_board,
+
+	initr_flash, (!CONFIG_SYS_NO_FLASH)
+
+	init_func_watchdog_reset, (CONFIG_WATCHDOG || CONFIG_HW_WATCHDOG)
+
+	initr_spi, (CONFIG_PPC)
+
+	initr_nand, (CONFIG_CMD_NAND)
+
+	initr_onenand, (CONFIG_CMD_ONENAND)
+
+	initr_mmc, (CONFIG_GENERIC_MMC)
+
+	initr_dataflash, (CONFIG_HAS_DATAFLASH)
+
+	initr_env,
+
+	initr_malloc_bootparams, (CONFIG_SYS_BOOTPARAMS_LEN)
+
+	init_func_watchdog_reset, (CONFIG_WATCHDOG || CONFIG_HW_WATCHDOG)
+
+	initr_secondary_cpu,
+
+	mac_read_from_eeprom, (CONFIG_ID_EEPROM || CONFIG_SYS_I2C_MAC_OFFSET)
+
+	init_func_watchdog_reset, (CONFIG_WATCHDOG || CONFIG_HW_WATCHDOG)
+
+	initr_pci, (CONFIG_PCI && !CONFIG_SYS_EARLY_PCI_INIT)
+
+	stdio_add_devices,
+
+	initr_jumptable, 
+
+	initr_api, (CONFIG_API)
+
+	console_init_r,
+
+	show_board_info, (CONFIG_DISPLAY_BOARDINFO_LATE)
+
+	arch_misc_init, (CONFIG_ARCH_MISC_INIT)
+
+	misc_init_r, (CONFIG_MISC_INIT_R)
+
+	init_func_watchdog_reset, (CONFIG_WATCHDOG || CONFIG_HW_WATCHDOG)
+
+	initr_kgdb, (CONFIG_CMD_KGDB)
+
+	interrupt_init,
+
+	initr_enable_interrupts, (CONFIG_ARM || CONFIG_AVR32)
+
+	timer_init, (CONFIG_MICROBLAZE || CONFIG_AVR32 || CONFIG_M68K)
+
+	initr_status_led, (CONFIG_STATUS_LED)
+
+	initr_ethaddr, (CONFIG_CMD_NET)
+
+	board_late_init, (CONFIG_BOARD_LATE_INIT) important
+
+	ambapp_init_reloc, (CONFIG_CMD_AMBAPP)
+
+	initr_ambapp_print, (CONFIG_CMD_AMBAPP && CONFIG_SYS_AMBAPP_PRINT_ON_STARTUP)
+
+	initr_scsi, (CONFIG_SCSI && !CONFIG_DM_SCSI)
+
+	initr_doc, (CONFIG_CMD_DOC)
+
+	initr_bbmii, (CONFIG_BITBANGMII)
+
+	initr_post, (CONFIG_POST)
+
+	initr_pcmcia, (CONFIG_CMD_PCMCIA && !CONFIG_CMD_IDE)
+
+	initr_ide, (CONFIG_CMD_IDE)
+
+	last_stage_init, (CONFIG_LAST_STAGE_INIT)
+
+	initr_bedbug, (CONFIG_CMD_BEDBUG)
+
+	initr_mem, (CONFIG_PRAM || CONFIG_LOGBUFFER)
+
+	initr_kbd, (CONFIG_PS2KBD)
+
+	run_main_loop,
 }
 
 --------------------------------------------------
@@ -1584,3 +1720,380 @@ initr_reloc_global_data:
 	efi_runtime_relocate() (CONFIG_EFI_LOADER)
 】
 --------------------------------------------------
+#it's time to unlock D-cache in e500
+initr_unlock_ram_in_cache:
+【
+	unlock_ram_in_cache()
+】
+--------------------------------------------------
+#同步?
+initr_barrier:
+【
+	asm("sync ; isync")
+】
+--------------------------------------------------
+#malloc有关的初始化
+initr_malloc:
+【
+	memset((void *)mem_malloc_start, 0x0, size) (CONFIG_SYS_MALLOC_CLEAR_ON_INIT)
+	malloc_bin_reloc()
+】
+--------------------------------------------------
+#和console有关
+initr_console_record:
+【
+	gd->console_out (CONFIG_CONSOLE_RECORD)
+	gd->console_in  (CONFIG_CONSOLE_RECORD)
+】
+--------------------------------------------------
+initr_noncached:
+【
+	noncached_init()
+】
+--------------------------------------------------
+bootstage_relocate:
+【
+】
+--------------------------------------------------
+#重新初始化Driver Model
+initr_dm:
+【
+	gd->dm_root_f
+	gd->dm_root
+	gd->timer (CONFIG_TIMER)
+
+	#initialise Driver Model structures and scan for devices
+	dm_init_and_scan()
+
+	#initialize a timer for time keeping
+	dm_timer_init() (CONFIG_TIMER_EARLY)
+】
+--------------------------------------------------
+initr_bootstage:
+【
+】
+--------------------------------------------------
+#具体的板级初始化，需要由board代码根据需要实现
+board_init:
+【
+】
+--------------------------------------------------
+#initialize clock framework
+set_cpu_clk_info:
+【
+	gd->cpu_clk
+	gd->bd->bi_arm_freq 
+	gd->bd->bi_dsp_freq = 0
+】
+--------------------------------------------------
+#和efi loader相关?
+efi_memory_init:
+【
+】
+--------------------------------------------------
+#set up stdio tables ready for devices
+#This does not add any devices, but just prepares stdio for use
+stdio_init_tables:
+【
+】
+--------------------------------------------------
+#重新初始化串口
+initr_serial:
+【
+】
+--------------------------------------------------
+#显示调试信息
+#宣布已经在RAM中执行，会打印relocate后的地址
+initr_announce:
+【
+】
+--------------------------------------------------
+initr_manual_reloc_cmdtable:
+【
+】
+--------------------------------------------------
+#initialize address mapping array
+initr_addr_map:
+【
+】
+--------------------------------------------------
+#由具体板级实现
+board_early_init_r:
+【
+】
+--------------------------------------------------
+#log buffer
+initr_logbuffer:
+【
+】
+--------------------------------------------------
+initr_post_backlog:
+【
+】
+--------------------------------------------------
+initr_icache_enable:
+【
+	#空
+】
+--------------------------------------------------
+#do early PCI configuration _before_ the flash gets initialised,
+#because PCU resources are crucial for flash access on some boards
+#board相关
+initr_pci:
+【
+】
+--------------------------------------------------
+#由arch代码实现
+arch_early_init_r:
+【
+】
+--------------------------------------------------
+#板级的power init代码，由板级代码实现
+power_init_board:
+【
+
+】
+--------------------------------------------------
+initr_flash:
+#flash设备初始化
+【
+	gd->bd
+	bd->bi_flashstart
+	bd->bi_flashsize
+】
+--------------------------------------------------
+initr_spi:
+【
+	#空
+】
+--------------------------------------------------
+#init nand
+#flash设备初始化
+initr_nand:
+【
+】
+--------------------------------------------------
+#init nand
+#flash设备初始化
+initr_onenand:
+【
+】
+--------------------------------------------------
+#init mmc
+#flash设备初始化
+initr_mmc:
+【
+】
+--------------------------------------------------
+#flash设备初始化
+initr_dataflash:
+【
+】
+--------------------------------------------------
+#环境变量有关的初始化
+initr_env:
+【
+	gd->fdt_blob
+】
+--------------------------------------------------
+#为boot parameters分配空间(malloc)
+initr_malloc_bootparams:
+【
+	gd->bd->bi_boot_params = (ulong)malloc(CONFIG_SYS_BOOTPARAMS_LEN)
+】
+--------------------------------------------------
+#初始化其它的CPU core
+initr_secondary_cpu:
+【
+	#空
+】
+--------------------------------------------------
+#和MAC信息相关
+mac_read_from_eeprom:
+【
+】
+--------------------------------------------------
+#初始化pci, 和具体板级代码相关
+pci_init:
+【
+】
+--------------------------------------------------
+#各种输入输出设备的初始化
+#keyboard, i2c, lcd, logbuffer, usb_tty, netconsole, jtag_console, cbmem_console 
+stdio_add_devices:
+【
+】
+--------------------------------------------------
+#init jumptable
+jumptable_init:
+【
+	gd->jt = malloc(sizeof(struct jt_funcs))
+】
+--------------------------------------------------
+initr_api:
+【
+	#init calls_table
+	calls_table[API_RSVD] = NULL
+	...
+	calls_table[API_DISPLAY_CLEAR] = &API_display_clear
+	calls_no = API_MAXCALL
+
+	#set env variable "api_address"
+】
+--------------------------------------------------
+#init console as a device
+console_init_r:
+【
+	#initialize output console
+
+	#initialize input console
+
+	#set environment variables
+】
+--------------------------------------------------
+#If the root node of the DTB has a "model" property, show it
+show_board_info:
+【
+	model = fdt_getprop(gd->fdt_blob, 0, "model", NULL)
+	checkboard()
+】
+--------------------------------------------------
+#miscellaneous arch-dependent init
+arch_misc_init:
+【
+】
+--------------------------------------------------
+#miscellaneous platform-dependent init
+misc_init_r:
+【
+】
+--------------------------------------------------
+#init kgdb
+kgdb_init:
+【
+	debugger_exception_handler = handle_exception
+】
+--------------------------------------------------
+#中断有关的初始化
+interrupt_init:
+【
+	#set up stacks
+	IRQ_STACK_START = gd->irq_sp - 4
+	IRQ_STACK_START_IN = gd->irq_sp + 8
+	FIQ_STACK_START = IRQ_STACK_START - CONFIG_STACKSIZE_IRQ
+
+	#set cpsr_c
+
+	#set sp
+】
+--------------------------------------------------
+#打开IRQ interrupt
+initr_enable_interrupts:
+【
+】
+--------------------------------------------------
+初始化timer
+timer_init:
+【
+	#set clock frequency 
+
+	#enable clock for timer
+】
+--------------------------------------------------
+#和LED灯相关
+initr_status_led:
+【
+】
+--------------------------------------------------
+#init ethaddr
+initr_ethaddr:
+【
+	#由env variable来赋下列值
+	gd->bd->bi_enetaddr
+	gd->bd->bi_enet1addr
+	...
+】
+--------------------------------------------------
+#由板级代码实现
+board_late_init:
+【
+】
+--------------------------------------------------
+#AMBA Plug&Play relocation & initialization
+ambapp_init_reloc:
+【
+】
+--------------------------------------------------
+#print AMBA 
+initr_ambapp_print:
+【
+	#print AHB Masters
+
+	#print AHB Slaves
+
+	#print APB Slaves
+】
+--------------------------------------------------
+initr_scsi:
+【
+】
+--------------------------------------------------
+initr_doc:
+【
+】
+--------------------------------------------------
+#和net相关
+initr_bbmii:
+【
+】
+--------------------------------------------------
+initr_post:
+【
+】
+--------------------------------------------------
+initr_pcmcia:
+【
+】
+--------------------------------------------------
+initr_ide:
+【
+】
+--------------------------------------------------
+#Some parts can be only initialized if all others (like 
+#Interrupts) are up and running (i.e. the PC-style ISA keyboard)
+#和SRAM相关
+last_stage_init:
+【
+】
+--------------------------------------------------
+#Initialize the bug_ctx structure used by the bedbug debugger
+#This is specific to the CPU since each has different 
+#debug registers and settings
+initr_bedbug:
+【
+】
+--------------------------------------------------
+#Export available size of memory for Linux, 
+#taking into account the protected RAM at top of memory
+initr_mem:
+【
+	pram = getenv("pram")
+	memsz = gd->ram_size / 1024 - pram
+	setenv("mem, memsz")
+】
+--------------------------------------------------
+initr_kbd:
+【
+】
+--------------------------------------------------
+#命令行操作
+run_main_loop:
+【
+	for (;;)
+	{
+		#到这u-boot已经初始化完毕，并且准备去处理cmd
+		main_loop()
+	}
+】
+--------------------------------------------------
+
