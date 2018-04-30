@@ -2047,6 +2047,7 @@ initr_bbmii:
 【
 】
 --------------------------------------------------
+#post(power-on self-test) 上电自检
 initr_post:
 【
 】
@@ -2097,3 +2098,88 @@ run_main_loop:
 】
 --------------------------------------------------
 
+#(h) 调用main_loop()
+\common\main.c
+【
+	#调用show_boot_progress()，利用它显示启动进程(progress)
+	bootstage_mark_name()
+
+	#设置环境变量ver为version_string
+	setenv("ver", version_string) (CONFIG_VERSION_VARIABLE)
+
+	#配置u-boot使用hush shell来作为执行器
+	#hush shell是一种轻量型的shell。
+	#cli_init用来初始化hush shell使用的一些变量
+	cli_init()
+
+	#从环境变量中获取"preboot"的定义
+	#该变量包含了一些预启动命令
+	#一般环境变量中不包含该项配置
+	run_preboot_environment_command()
+
+	#通过TFTP更新firmware
+	update_tftp() (CONFIG_UPDATE_TFTP)
+
+	#从环境变量中取出"bootdelay"和"bootcmd"的配置值
+	#将取出的"bootdelay"配置值转换成整数，赋值给全局变量stored_bootdelay，最后返回"bootcmd"的配置值#bootdelay为u-boot的启动延时计数值，计数期间内如无用户按键输入干预，那么将执行"bootcmd"配置中的命令
+	bootdelay_process()
+--------------------------------------------------
+getenv("bootdelay")
+
+getenv("bootcmd")
+
+process_fdt_options(gd->fdt_blob) (CONFIG_OF_CONTROL&&CONFIG_SYS_TEXT_BASE)
+【
+	#Add an env variable to point to a kernel payload, if available
+	addr = fdtdec_get_config_int(gd->fdt_blob, "kernel-offset", 0)
+	setenv_addr("kernaddr", (void *)(CONFIG_SYS_TEXT_BASE + addr))
+
+	#Add an env variable to point to a root disk, if available
+	addr = fdtdec_get_config_int(gd->fdt_blob, "rootdisk-offset", 0)
+	setenv_addr("rootaddr", (void *)(CONFIG_SYS_TEXT_BASE + addr))
+】
+
+stored_bootdelay = bootdelay
+--------------------------------------------------
+
+	#If bootcmd is defined in the /config node of the FDT, 
+	#we use that as the boot command
+	cli_process_fdt()
+
+	autoboot_command()
+--------------------------------------------------
+#Watch for 'delay' seconds for autoboot stop or autoboot delay string
+#在执行的时间stored_bootdelay(秒)内，如无用户按键输入干预，那么abortboot_normal函数将返回0，否则返回1
+
+abortboot(stored_bootdelay)
+
+#当无用户按键干预时，接下来将调用run_command_list执行上述从环境变量中读取的"bootcmd"配置值，注意该函数的参数s
+#run_command_list中调用了hush shell的命令解释器(parse_stream_outer函数)，解释bootcmd中的启动命令
+#环境变量bootcmd中的启动命令，用来设置linux必要的启动环境，然后加载和启动linux内核
+#u-boot启动linux内核后，将控制权交给linux内核，至此不再返回
+#Run a list of commands separated by ; or even \0
+
+run_command_list()
+【
+	parse_string_outer()
+	 -> parse_stream_outer()
+】
+--------------------------------------------------
+
+	#如用户在设定的bootdelay内无按键输入，那么将运行cli_loop执行hush shell命令解释器
+	cli_loop(buff, FLAG_PARSE_SEMICOLON)
+--------------------------------------------------
+#parse_file_outer进行必要的初始化后，也将调用hush shell的命令解释器，即parse_stream_outer函数
+parse_file_outer()
+【
+	#cmd_process最后完成u-boot命令的定位和执行
+	parse_stream_outer()
+	 -> run_list()
+	  -> run_list_real()
+	   -> run_pipe_real()
+	    -> cmd_process()
+】
+--------------------------------------------------
+】
+
+#(I) 调用cmd_process()处理命令
