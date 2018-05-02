@@ -2183,3 +2183,32 @@ parse_file_outer()
 】
 
 #(I) 调用cmd_process()处理命令
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+Kernel entry
+++++++++++++++++++++++++++++++++++++++++++++++++
+本质上，Device Tree改变了原来用hardcode方式将HW配置信息嵌入到内核代码的方法，改用bootloader传递一个DB的形式。
+对于基于ARM CPU的嵌入式系统，我们习惯于针对每一个platform进行内核的编译。
+但是随着ARM在消费类电子上的广泛应用（甚至桌面系统、服务器系统），我们期望ARM能够象X86那样用一个kernel image来支持多个platform。
+在这种情况下，如果我们认为kernel是一个black box，那么其输入参数应该包括：
+
+1、识别platform的信息
+
+2、runtime的配置参数
+
+3、设备的拓扑结构以及特性
+
+对于嵌入式系统，在系统启动阶段，bootloader会加载内核并将控制权转交给内核，此外，还需要把上述的三个参数信息传递给kernel，以便kernel可以有较大的灵活性。
+在linux kernel中，Device Tree的设计目标就是如此。
+--------------------------------------------------
+设定meminfo（该全局变量确定了物理内存的布局）有若干种途径：
+
+1、通过tag list（tag是ATAG_MEM）传递memory bank的信息。
+
+2、通过command line（可以用tag list，也可以通过DTB）传递memory bank的信息。
+
+3、通过DTB的memory node传递memory bank的信息。
+
+目前当然是推荐使用Device Tree的方式来传递物理内存布局信息。
+--------------------------------------------------
